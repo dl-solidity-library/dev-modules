@@ -1,25 +1,27 @@
-import { MAX_UINT256, ZERO_ADDR } from "@/scripts/utils/constants";
-import { precision, wei } from "@/scripts/utils/utils";
-import { Reverter } from "@/test/helpers/reverter";
+import { ethers } from "hardhat";
+import { expect } from "chai";
+
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
-import { expect } from "chai";
-import { ethers } from "hardhat";
 
-import { ERC20Mock, ERC20Mock__factory, Vesting, VestingMock, VestingMock__factory } from "@ethers-v6";
+import { Reverter } from "@/test/helpers/reverter";
+import { precision, wei } from "@/scripts/utils/utils";
+import { MAX_UINT256 } from "@/scripts/utils/constants";
+
+import { ERC20Mock, ERC20Mock__factory, AVesting, VestingMock, VestingMock__factory } from "@ethers-v6";
 
 describe("Vesting", () => {
   let reverter = new Reverter();
 
-  let owner: SignerWithAddress;
-  let alice: SignerWithAddress;
+  let OWNER: SignerWithAddress;
+  let ALICE: SignerWithAddress;
 
   let vesting: VestingMock;
   let erc20: ERC20Mock;
 
-  type BaseSchedule = Vesting.BaseScheduleStruct;
-  type Schedule = Vesting.ScheduleStruct;
-  type Vesting = Vesting.VestingDataStruct;
+  type BaseSchedule = AVesting.BaseScheduleStruct;
+  type Schedule = AVesting.ScheduleStruct;
+  type Vesting = AVesting.VestingDataStruct;
 
   const LINEAR_EXPONENT = 1n;
 
@@ -30,14 +32,14 @@ describe("Vesting", () => {
   const exponent = 4n;
 
   before(async () => {
-    [owner, alice] = await ethers.getSigners();
+    [OWNER, ALICE] = await ethers.getSigners();
 
-    vesting = await new VestingMock__factory(owner).deploy();
-    erc20 = await new ERC20Mock__factory(owner).deploy("Test", "TST", 18);
+    vesting = await new VestingMock__factory(OWNER).deploy();
+    erc20 = await new ERC20Mock__factory(OWNER).deploy("Test", "TST", 18);
 
     await vesting.__VestingMock_init();
 
-    await erc20.mint(owner.address, wei(1_000_000));
+    await erc20.mint(OWNER.address, wei(1_000_000));
     await erc20.approve(await vesting.getAddress(), MAX_UINT256);
 
     await reverter.snapshot();
@@ -55,8 +57,10 @@ describe("Vesting", () => {
 
   describe("access", () => {
     it("should not initialize twice", async () => {
-      await expect(vesting.__VestingMock_init()).to.be.revertedWith("Initializable: contract is already initialized");
-      await expect(vesting.vestingInit()).to.be.revertedWith("Initializable: contract is not initializing");
+      await expect(vesting.__VestingMock_init())
+        .to.be.revertedWithCustomError(vesting, "InvalidInitialization")
+        .withArgs();
+      await expect(vesting.vestingInit()).to.be.revertedWithCustomError(vesting, "NotInitializing").withArgs();
     });
   });
 
@@ -87,34 +91,35 @@ describe("Vesting", () => {
     it("should revert if duration periods is 0", async () => {
       let baseSchedule = { secondsInPeriod, durationInPeriods: 0, cliffInPeriods } as BaseSchedule;
 
-      await expect(vesting.createBaseSchedule(baseSchedule)).to.be.revertedWith(
-        "VestingWallet: cannot create schedule with zero duration or zero seconds in period",
-      );
+      await expect(vesting.createBaseSchedule(baseSchedule))
+        .to.be.revertedWithCustomError(vesting, "ScheduleInvalidPeriodParameter")
+        .withArgs(0, secondsInPeriod);
     });
 
     it("should revert if seconds in period is 0", async () => {
       let baseSchedule = { secondsInPeriod: 0, durationInPeriods, cliffInPeriods } as BaseSchedule;
 
-      await expect(vesting.createBaseSchedule(baseSchedule)).to.be.revertedWith(
-        "VestingWallet: cannot create schedule with zero duration or zero seconds in period",
-      );
+      await expect(vesting.createBaseSchedule(baseSchedule))
+        .to.be.revertedWithCustomError(vesting, "ScheduleInvalidPeriodParameter")
+        .withArgs(durationInPeriods, 0);
     });
 
     it("should revert if cliff is greater than duration", async () => {
-      let baseSchedule = { secondsInPeriod, durationInPeriods, cliffInPeriods: durationInPeriods + 1n } as BaseSchedule;
+      const wrongCliff = durationInPeriods + 1n;
+      let baseSchedule = { secondsInPeriod, durationInPeriods, cliffInPeriods: wrongCliff } as BaseSchedule;
 
-      await expect(vesting.createBaseSchedule(baseSchedule)).to.be.revertedWith(
-        "VestingWallet: cliff cannot be greater than duration",
-      );
+      await expect(vesting.createBaseSchedule(baseSchedule))
+        .to.be.revertedWithCustomError(vesting, "ScheduleCliffGreaterThanDuration")
+        .withArgs(wrongCliff, durationInPeriods);
     });
 
     it("should revert if exponent is 0", async () => {
       let baseSchedule = { secondsInPeriod, durationInPeriods, cliffInPeriods } as BaseSchedule;
       let schedule = { scheduleData: baseSchedule, exponent: 0 } as Schedule;
 
-      await expect(vesting.createSchedule(schedule)).to.be.revertedWith(
-        "VestingWallet: cannot create schedule with zero exponent",
-      );
+      await expect(vesting.createSchedule(schedule))
+        .to.be.revertedWithCustomError(vesting, "ExponentIsZero")
+        .withArgs();
     });
   });
 
@@ -138,7 +143,7 @@ describe("Vesting", () => {
 
       defaultVesting = {
         vestingStartTime: await time.latest(),
-        beneficiary: alice.address,
+        beneficiary: ALICE.address,
         vestingToken: await erc20.getAddress(),
         vestingAmount: vestingAmount,
         paidAmount: 0,
@@ -149,7 +154,7 @@ describe("Vesting", () => {
     it("should correctly create vesting", async () => {
       let linearVesting = {
         vestingStartTime: await time.latest(),
-        beneficiary: alice.address,
+        beneficiary: ALICE.address,
         vestingToken: await erc20.getAddress(),
         vestingAmount: vestingAmount,
         paidAmount: 0,
@@ -174,8 +179,8 @@ describe("Vesting", () => {
       expect(await vesting.getVesting(1)).to.deep.equal(Object.values(linearVesting));
       expect(await vesting.getVesting(2)).to.deep.equal(Object.values(exponentialVesting));
 
-      expect(await vesting.getVestingIds(await alice.getAddress())).to.deep.equal([1, 2]);
-      expect(await vesting.getVestings(await alice.getAddress())).to.deep.equal([
+      expect(await vesting.getVestingIds(await ALICE.getAddress())).to.deep.equal([1, 2]);
+      expect(await vesting.getVestings(await ALICE.getAddress())).to.deep.equal([
         Object.values(linearVesting),
         Object.values(exponentialVesting),
       ]);
@@ -190,41 +195,41 @@ describe("Vesting", () => {
     it("should revert if vesting start time is zero", async () => {
       defaultVesting.vestingStartTime = 0;
 
-      await expect(vesting.createVesting(defaultVesting)).to.be.revertedWith(
-        "VestingWallet: cannot create vesting for zero time",
-      );
+      await expect(vesting.createVesting(defaultVesting))
+        .to.be.revertedWithCustomError(vesting, "StartTimeIsZero")
+        .withArgs();
     });
 
     it("should revert if vesting amount is zero", async () => {
       defaultVesting.vestingAmount = 0;
 
-      await expect(vesting.createVesting(defaultVesting)).to.be.revertedWith(
-        "VestingWallet: cannot create vesting for zero amount",
-      );
+      await expect(vesting.createVesting(defaultVesting))
+        .to.be.revertedWithCustomError(vesting, "VestingAmountIsZero")
+        .withArgs();
     });
 
     it("should revert if vesting beneficiary is zero address", async () => {
-      defaultVesting.beneficiary = ZERO_ADDR;
+      defaultVesting.beneficiary = ethers.ZeroAddress;
 
-      await expect(vesting.createVesting(defaultVesting)).to.be.revertedWith(
-        "VestingWallet: cannot create vesting for zero address",
-      );
+      await expect(vesting.createVesting(defaultVesting))
+        .to.be.revertedWithCustomError(vesting, "BeneficiaryIsZeroAddress")
+        .withArgs();
     });
 
     it("should revert if vesting token is zero address", async () => {
-      defaultVesting.vestingToken = ZERO_ADDR;
+      defaultVesting.vestingToken = ethers.ZeroAddress;
 
-      await expect(vesting.createVesting(defaultVesting)).to.be.revertedWith(
-        "VestingWallet: vesting token cannot be zero address",
-      );
+      await expect(vesting.createVesting(defaultVesting))
+        .to.be.revertedWithCustomError(vesting, "VestingTokenIsZeroAddress")
+        .withArgs();
     });
 
     it("should revert if vesting created for a past date", async () => {
       await time.increase(secondsInPeriod * durationInPeriods);
 
-      await expect(vesting.createVesting(defaultVesting)).to.be.revertedWith(
-        "VestingWallet: cannot create vesting for a past date",
-      );
+      await expect(vesting.createVesting(defaultVesting))
+        .to.be.revertedWithCustomError(vesting, "VestingPastDate")
+        .withArgs();
     });
   });
 
@@ -244,7 +249,7 @@ describe("Vesting", () => {
 
       linearVesting = {
         vestingStartTime: await time.latest(),
-        beneficiary: alice.address,
+        beneficiary: ALICE.address,
         vestingToken: await erc20.getAddress(),
         vestingAmount: vestingAmount,
         paidAmount: 0,
@@ -279,8 +284,8 @@ describe("Vesting", () => {
       expect(await vesting.getVestedAmount(exponentialVestingId)).to.be.equal(exponentialVesting.vestingAmount);
       expect(await vesting.getWithdrawableAmount(exponentialVestingId)).to.be.equal(exponentialVesting.vestingAmount);
 
-      const linearTx = vesting.connect(alice).withdrawFromVesting(linearVestingId);
-      const exponentialTx = vesting.connect(alice).withdrawFromVesting(exponentialVestingId);
+      const linearTx = vesting.connect(ALICE).withdrawFromVesting(linearVestingId);
+      const exponentialTx = vesting.connect(ALICE).withdrawFromVesting(exponentialVestingId);
 
       await expect(linearTx)
         .to.emit(vesting, "WithdrawnFromVesting")
@@ -295,9 +300,9 @@ describe("Vesting", () => {
       expect(await vesting.getVesting(linearVestingId)).to.deep.equal(Object.values(linearVesting));
       expect(await vesting.getVesting(exponentialVestingId)).to.deep.equal(Object.values(exponentialVesting));
 
-      expect(await erc20.balanceOf(alice.address)).changeTokenBalance(
+      expect(await erc20.balanceOf(ALICE.address)).changeTokenBalance(
         erc20,
-        alice.address,
+        ALICE.address,
         BigInt(linearVesting.vestingAmount) + BigInt(exponentialVesting.vestingAmount),
       );
     });
@@ -336,8 +341,8 @@ describe("Vesting", () => {
       expect(await vesting.getVestedAmount(exponentialVestingId)).to.be.equal(exponentialVestedAmount);
       expect(await vesting.getWithdrawableAmount(exponentialVestingId)).to.be.equal(exponentialVestedAmount);
 
-      await vesting.connect(alice).withdrawFromVesting(linearVestingId);
-      await vesting.connect(alice).withdrawFromVesting(exponentialVestingId);
+      await vesting.connect(ALICE).withdrawFromVesting(linearVestingId);
+      await vesting.connect(ALICE).withdrawFromVesting(exponentialVestingId);
 
       linearVesting.paidAmount = linearVestedAmount;
       exponentialVesting.paidAmount = exponentialVestedAmount;
@@ -348,9 +353,9 @@ describe("Vesting", () => {
       expect(await vesting.getWithdrawableAmount(linearVestingId)).to.be.equal(0);
       expect(await vesting.getWithdrawableAmount(exponentialVestingId)).to.be.equal(0);
 
-      expect(await erc20.balanceOf(alice.address)).changeTokenBalance(
+      expect(await erc20.balanceOf(ALICE.address)).changeTokenBalance(
         erc20,
-        alice.address,
+        ALICE.address,
         linearVestedAmount + exponentialVestedAmount,
       );
     });
@@ -358,9 +363,9 @@ describe("Vesting", () => {
     it("should revert if non beneficiary tries to withdraw from vesting", async () => {
       await vesting.createVesting(linearVesting);
 
-      await expect(vesting.withdrawFromVesting(1)).to.be.revertedWith(
-        "VestingWallet: only beneficiary can withdraw from his vesting",
-      );
+      await expect(vesting.withdrawFromVesting(1))
+        .to.be.revertedWithCustomError(vesting, "UnauthorizedAccount")
+        .withArgs(OWNER);
     });
 
     it("should revert if nothing to withdraw", async () => {
@@ -368,11 +373,11 @@ describe("Vesting", () => {
 
       await time.increase(secondsInPeriod * durationInPeriods);
 
-      await vesting.connect(alice).withdrawFromVesting(1);
+      await vesting.connect(ALICE).withdrawFromVesting(1);
 
-      await expect(vesting.connect(alice).withdrawFromVesting(1)).to.be.revertedWith(
-        "VestingWallet: nothing to withdraw",
-      );
+      await expect(vesting.connect(ALICE).withdrawFromVesting(1))
+        .to.be.revertedWithCustomError(vesting, "NothingToWithdraw")
+        .withArgs();
     });
   });
 

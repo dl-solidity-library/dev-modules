@@ -1,5 +1,6 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
+
 import { Reverter } from "@/test/helpers/reverter";
 
 import { VectorMock } from "@ethers-v6";
@@ -40,9 +41,9 @@ describe("Vector", () => {
     });
 
     it("should test empty vector", async () => {
-      await expect(vector.testEmptyPop()).to.be.revertedWith("Vector: empty vector");
-      await expect(vector.testEmptySet()).to.be.revertedWith("Vector: out of bounds");
-      await expect(vector.testEmptyAt()).to.be.revertedWith("Vector: out of bounds");
+      await expect(vector.testEmptyPop()).to.be.revertedWithCustomError(vector, "PopEmptyVector").withArgs();
+      await expect(vector.testEmptySet()).to.be.revertedWithCustomError(vector, "IndexOutOfBounds").withArgs(1, 0);
+      await expect(vector.testEmptyAt()).to.be.revertedWithCustomError(vector, "IndexOutOfBounds").withArgs(0, 0);
     });
   });
 

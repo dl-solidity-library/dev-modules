@@ -7,10 +7,9 @@ import { CartesianMerkleTreeMock } from "@ethers-v6";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 import { Reverter } from "@/test/helpers/reverter";
-import { ZERO_BYTES32 } from "@/scripts/utils/constants";
 import { getPoseidon, poseidonHash } from "@/test/helpers/poseidon-hash";
 
-import { CartesianMerkleTree } from "@/generated-types/ethers/contracts/mock/libs/data-structures/CartesianMerkleTreeMock";
+import { CartesianMerkleTree } from "@ethers-v6/contracts/mock/libs/data-structures/CartesianMerkleTreeMock";
 
 describe("CartesianMerkleTree", () => {
   const reverter = new Reverter();
@@ -147,15 +146,15 @@ describe("CartesianMerkleTree", () => {
     });
 
     it("should not initialize twice", async () => {
-      await expect(treaple.initializeUintTreaple(20)).to.be.rejectedWith(
-        "CartesianMerkleTree: treaple is already initialized",
-      );
+      await expect(treaple.initializeUintTreaple(20))
+        .to.be.revertedWithCustomError(treaple, "TreapleAlreadyInitialized")
+        .withArgs();
     });
 
     it("should revert if trying to set incorrect desired proof size", async () => {
-      await expect(treaple.setDesiredProofSizeUintTreaple(0)).to.be.rejectedWith(
-        "CartesianMerkleTree: desired proof size must be greater than zero",
-      );
+      await expect(treaple.setDesiredProofSizeUintTreaple(0))
+        .to.be.revertedWithCustomError(treaple, "ZeroDesiredProofSize")
+        .withArgs();
     });
 
     it("should correctly set new desired proof size", async () => {
@@ -172,8 +171,8 @@ describe("CartesianMerkleTree", () => {
       });
       const newTreap = await CartesianMerkleTreeMock.deploy();
 
-      await expect(newTreap.addUint(13n)).to.be.rejectedWith("CartesianMerkleTree: treaple is not initialized");
-      await expect(newTreap.removeUint(13n)).to.be.rejectedWith("CartesianMerkleTree: treaple is not initialized");
+      await expect(newTreap.addUint(13n)).to.be.revertedWithCustomError(treaple, "TreapleNotInitialized").withArgs();
+      await expect(newTreap.removeUint(13n)).to.be.revertedWithCustomError(treaple, "TreapleNotInitialized").withArgs();
     });
 
     it("should add and full remove elements from the CMT correctly", async () => {
@@ -190,7 +189,7 @@ describe("CartesianMerkleTree", () => {
         await treaple.removeUint(keys[i]);
       }
 
-      expect(await treaple.getUintRoot()).to.equal(ZERO_BYTES32);
+      expect(await treaple.getUintRoot()).to.equal(ethers.ZeroHash);
 
       expect(await treaple.getUintNodesCount()).to.equal(0);
 
@@ -275,9 +274,9 @@ describe("CartesianMerkleTree", () => {
         await treaple.addUint(hexKey);
       }
 
-      await expect(treaple.removeUint(ethers.toBeHex(8, 32))).to.be.revertedWith(
-        "CartesianMerkleTree: the node does not exist",
-      );
+      await expect(treaple.removeUint(ethers.toBeHex(8, 32)))
+        .to.be.revertedWithCustomError(treaple, "NodeDoesNotExist")
+        .withArgs();
     });
 
     it("should generate empty proof on empty tree", async () => {
@@ -333,10 +332,10 @@ describe("CartesianMerkleTree", () => {
     });
 
     it("should revert if trying to add/remove zero key", async () => {
-      const reason = "CartesianMerkleTree: the key can't be zero";
+      const customError = "ZeroKeyProvided";
 
-      await expect(treaple.addUint(ZERO_BYTES32)).to.be.rejectedWith(reason);
-      await expect(treaple.removeUint(ZERO_BYTES32)).to.be.rejectedWith(reason);
+      await expect(treaple.addUint(ethers.ZeroHash)).to.be.revertedWithCustomError(treaple, customError).withArgs();
+      await expect(treaple.removeUint(ethers.ZeroHash)).to.be.revertedWithCustomError(treaple, customError).withArgs();
     });
 
     it("should revert if trying to set hasher with non-empty treaple", async () => {
@@ -344,7 +343,9 @@ describe("CartesianMerkleTree", () => {
 
       await treaple.addUint(key);
 
-      await expect(treaple.setUintPoseidonHasher()).to.be.rejectedWith("CartesianMerkleTree: treaple is not empty");
+      await expect(treaple.setUintPoseidonHasher())
+        .to.be.revertedWithCustomError(treaple, "TreapleNotEmpty")
+        .withArgs();
     });
 
     it("should revert if trying to add a node with the same key", async () => {
@@ -352,15 +353,15 @@ describe("CartesianMerkleTree", () => {
 
       await treaple.addUint(key);
 
-      await expect(treaple.addUint(key)).to.be.rejectedWith("CartesianMerkleTree: the key already exists");
+      await expect(treaple.addUint(key)).to.be.revertedWithCustomError(treaple, "KeyAlreadyExists").withArgs();
     });
 
     it("should get empty Node by non-existing key", async () => {
-      expect((await treaple.getUintNodeByKey(1n)).key).to.be.equal(ZERO_BYTES32);
+      expect((await treaple.getUintNodeByKey(1n)).key).to.be.equal(ethers.ZeroHash);
 
       await treaple.addUint(ethers.toBeHex(7n, 32));
 
-      expect((await treaple.getUintNodeByKey(5n)).key).to.be.equal(ZERO_BYTES32);
+      expect((await treaple.getUintNodeByKey(5n)).key).to.be.equal(ethers.ZeroHash);
     });
 
     it("should get exception if desired size is too low", async () => {
@@ -371,9 +372,9 @@ describe("CartesianMerkleTree", () => {
         await treaple.addUint(keys[i]);
       }
 
-      await expect(treaple.getUintProof(keys[0], 1)).to.be.rejectedWith(
-        "CartesianMerkleTree: desired proof size is too low",
-      );
+      await expect(treaple.getUintProof(keys[0], 1))
+        .to.be.revertedWithCustomError(treaple, "ProofSizeTooLow")
+        .withArgs(1, 1);
     });
   });
 
@@ -384,9 +385,9 @@ describe("CartesianMerkleTree", () => {
     });
 
     it("should not initialize twice", async () => {
-      await expect(treaple.initializeBytes32Treaple(20)).to.be.rejectedWith(
-        "CartesianMerkleTree: treaple is already initialized",
-      );
+      await expect(treaple.initializeBytes32Treaple(20))
+        .to.be.revertedWithCustomError(treaple, "TreapleAlreadyInitialized")
+        .withArgs();
     });
 
     it("should correctly set new desired proof size", async () => {
@@ -504,9 +505,9 @@ describe("CartesianMerkleTree", () => {
     });
 
     it("should not initialize twice", async () => {
-      await expect(treaple.initializeAddressTreaple(20)).to.be.rejectedWith(
-        "CartesianMerkleTree: treaple is already initialized",
-      );
+      await expect(treaple.initializeAddressTreaple(20))
+        .to.be.revertedWithCustomError(treaple, "TreapleAlreadyInitialized")
+        .withArgs();
     });
 
     it("should correctly set new desired proof size", async () => {

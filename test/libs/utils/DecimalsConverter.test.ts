@@ -1,5 +1,6 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
+
 import { Reverter } from "@/test/helpers/reverter";
 import { wei } from "@/scripts/utils/utils";
 
@@ -95,7 +96,9 @@ describe("DecimalsConverter", () => {
     });
 
     it("should get exception if the result of conversion is zero", async () => {
-      await expect(mock.to18Safe(wei("1", 11), 30)).to.be.revertedWith("DecimalsConverter: conversion failed");
+      await expect(mock.to18Safe(wei("1", 11), 30))
+        .to.be.revertedWithCustomError(mock, "ConversionFailed")
+        .withArgs();
     });
   });
 
@@ -142,7 +145,9 @@ describe("DecimalsConverter", () => {
     });
 
     it("should get exception if the result of conversion is zero", async () => {
-      await expect(mock.from18Safe(wei("1", 6), 6)).to.be.revertedWith("DecimalsConverter: conversion failed");
+      await expect(mock.from18Safe(wei("1", 6), 6))
+        .to.be.revertedWithCustomError(mock, "ConversionFailed")
+        .withArgs();
     });
   });
 
@@ -180,7 +185,9 @@ describe("DecimalsConverter", () => {
     });
 
     it("should get exception if the result of conversion is zero", async () => {
-      await expect(mock.round18Safe(wei("1", 6), 6)).to.be.revertedWith("DecimalsConverter: conversion failed");
+      await expect(mock.round18Safe(wei("1", 6), 6))
+        .to.be.revertedWithCustomError(mock, "ConversionFailed")
+        .withArgs();
     });
   });
 });

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.21;
 
-import {DiamondOwnableStorage} from "./DiamondOwnableStorage.sol";
+import {ADiamondOwnableStorage} from "./ADiamondOwnableStorage.sol";
 
 /**
  * @notice The Diamond standard module
@@ -9,8 +9,10 @@ import {DiamondOwnableStorage} from "./DiamondOwnableStorage.sol";
  * This is modified version of OpenZeppelin's Ownable contract to be used as a Storage contract
  * by the Diamond Standard.
  */
-contract DiamondOwnable is DiamondOwnableStorage {
+contract DiamondOwnable is ADiamondOwnableStorage {
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    error InvalidOwner();
 
     /**
      * @notice Transfers ownership to `msg.sender`
@@ -24,7 +26,7 @@ contract DiamondOwnable is DiamondOwnableStorage {
      * @param newOwner_ the new owner of the Diamond
      */
     function transferOwnership(address newOwner_) public virtual onlyOwner {
-        require(newOwner_ != address(0), "DiamondOwnable: zero address owner");
+        if (newOwner_ == address(0)) revert InvalidOwner();
 
         _transferOwnership(newOwner_);
     }

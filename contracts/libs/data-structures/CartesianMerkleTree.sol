@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.21;
 
 /**
  * @notice Cartesian Merkle Tree Module
@@ -47,6 +47,17 @@ library CartesianMerkleTree {
     struct UintCMT {
         CMT _treaple;
     }
+
+    error TreapleNotInitialized();
+    error TreapleAlreadyInitialized();
+    error TreapleNotEmpty();
+
+    error ZeroDesiredProofSize();
+    error ProofSizeTooLow(uint256 attemptedIndex, uint256 maxIndex);
+
+    error ZeroKeyProvided();
+    error KeyAlreadyExists();
+    error NodeDoesNotExist();
 
     /**
      * @notice The function to initialize the Cartesian Merkle tree.
@@ -608,21 +619,18 @@ library CartesianMerkleTree {
     bytes32 internal constant ZERO_HASH = bytes32(0);
 
     modifier onlyInitialized(CMT storage treaple) {
-        require(_isInitialized(treaple), "CartesianMerkleTree: treaple is not initialized");
+        if (!_isInitialized(treaple)) revert TreapleNotInitialized();
         _;
     }
 
     function _initialize(CMT storage treaple, uint32 desiredProofSize_) private {
-        require(!_isInitialized(treaple), "CartesianMerkleTree: treaple is already initialized");
+        if (_isInitialized(treaple)) revert TreapleAlreadyInitialized();
 
         _setDesiredProofSize(treaple, desiredProofSize_);
     }
 
     function _setDesiredProofSize(CMT storage treaple, uint32 desiredProofSize_) private {
-        require(
-            desiredProofSize_ > 0,
-            "CartesianMerkleTree: desired proof size must be greater than zero"
-        );
+        if (desiredProofSize_ == 0) revert ZeroDesiredProofSize();
 
         treaple.desiredProofSize = desiredProofSize_;
     }
@@ -631,7 +639,7 @@ library CartesianMerkleTree {
         CMT storage treaple,
         function(bytes32, bytes32, bytes32) view returns (bytes32) hash3_
     ) private {
-        require(_nodesCount(treaple) == 0, "CartesianMerkleTree: treaple is not empty");
+        if (_nodesCount(treaple) != 0) revert TreapleNotEmpty();
 
         treaple.isCustomHasherSet = true;
 
@@ -639,13 +647,13 @@ library CartesianMerkleTree {
     }
 
     function _add(CMT storage treaple, bytes32 key_) private onlyInitialized(treaple) {
-        require(key_ != 0, "CartesianMerkleTree: the key can't be zero");
+        if (key_ == 0) revert ZeroKeyProvided();
 
         treaple.merkleRootId = uint64(_add(treaple, treaple.merkleRootId, key_));
     }
 
     function _remove(CMT storage treaple, bytes32 key_) private onlyInitialized(treaple) {
-        require(key_ != 0, "CartesianMerkleTree: the key can't be zero");
+        if (key_ == 0) revert ZeroKeyProvided();
 
         treaple.merkleRootId = uint64(_remove(treaple, treaple.merkleRootId, key_));
     }
@@ -661,7 +669,7 @@ library CartesianMerkleTree {
             return _newNode(treaple, key_);
         }
 
-        require(rootNode.key != key_, "CartesianMerkleTree: the key already exists");
+        if (rootNode.key == key_) revert KeyAlreadyExists();
 
         if (rootNode.key > key_) {
             rootNode.childLeft = uint64(_add(treaple, rootNode.childLeft, key_));
@@ -691,7 +699,7 @@ library CartesianMerkleTree {
     ) private returns (uint256) {
         Node storage rootNode = treaple.nodes[uint64(rootNodeId_)];
 
-        require(rootNode.key != 0, "CartesianMerkleTree: the node does not exist");
+        if (rootNode.key == 0) revert NodeDoesNotExist();
 
         if (key_ < rootNode.key) {
             rootNode.childLeft = uint64(_remove(treaple, rootNode.childLeft, key_));
@@ -882,10 +890,9 @@ library CartesianMerkleTree {
         uint256 currentSiblingsIndex_,
         bytes32 siblingToAdd_
     ) private pure {
-        require(
-            currentSiblingsIndex_ < proof_.siblings.length,
-            "CartesianMerkleTree: desired proof size is too low"
-        );
+        if (currentSiblingsIndex_ >= proof_.siblings.length) {
+            revert ProofSizeTooLow(currentSiblingsIndex_, proof_.siblings.length);
+        }
 
         proof_.siblings[currentSiblingsIndex_] = siblingToAdd_;
     }

@@ -1,31 +1,31 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.21;
 
 import {IBeacon} from "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
-import {PermanentOwnable} from "../../access/PermanentOwnable.sol";
+import {APermanentOwnable} from "../../access/APermanentOwnable.sol";
 
 /**
  * @notice The proxies module
  *
  * This is a lightweight utility ProxyBeacon contract that may be used as a beacon that BeaconProxies point to.
  */
-contract ProxyBeacon is IBeacon, PermanentOwnable {
-    using Address for address;
-
-    constructor() PermanentOwnable(msg.sender) {}
+contract ProxyBeacon is IBeacon, APermanentOwnable {
+    constructor() APermanentOwnable(msg.sender) {}
 
     address private _implementation;
 
     event Upgraded(address implementation);
+
+    error NewImplementationNotAContract(address newImplementation);
 
     /**
      * @notice The function to upgrade to implementation contract
      * @param newImplementation_ the new implementation
      */
     function upgradeTo(address newImplementation_) external virtual onlyOwner {
-        require(newImplementation_.isContract(), "ProxyBeacon: not a contract");
+        if (newImplementation_.code.length == 0)
+            revert NewImplementationNotAContract(newImplementation_);
 
         _implementation = newImplementation_;
 

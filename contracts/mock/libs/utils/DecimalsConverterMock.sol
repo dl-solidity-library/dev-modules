@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+// solhint-disable
+pragma solidity ^0.8.21;
 
 import {DecimalsConverter} from "../../../libs/utils/DecimalsConverter.sol";
-import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract DecimalsConverterMock {
     using DecimalsConverter for *;

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+// solhint-disable
+pragma solidity ^0.8.21;
 
 import {ReturnDataProxy} from "../../../libs/utils/ReturnDataProxy.sol";
 
@@ -11,6 +12,8 @@ struct Entry {
 
 contract RawReturnMock {
     uint256 private _mirror;
+
+    error Test();
 
     receive() external payable {}
 
@@ -27,7 +30,7 @@ contract RawReturnMock {
     }
 
     function revertWithMessage() external pure {
-        revert("test");
+        revert Test();
     }
 
     function getEntry() external pure returns (Entry memory) {

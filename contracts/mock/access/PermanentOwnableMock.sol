@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+// solhint-disable
+pragma solidity ^0.8.21;
 
-import {PermanentOwnable} from "../../access/PermanentOwnable.sol";
+import {APermanentOwnable} from "../../access/APermanentOwnable.sol";
 
-contract PermanentOwnableMock is PermanentOwnable {
+contract PermanentOwnableMock is APermanentOwnable {
     event ValidOwner();
 
-    constructor(address _owner) PermanentOwnable(_owner) {}
+    constructor(address _owner) APermanentOwnable(_owner) {}
 
     function onlyOwnerMethod() external onlyOwner {
         emit ValidOwner();

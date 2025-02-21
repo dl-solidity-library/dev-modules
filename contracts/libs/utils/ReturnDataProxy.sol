@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.21;
 
 /**
  * @notice This is a pure assembly library for "yielding" the returned data without doubling the

@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.21;
 
+// solhint-disable-next-line no-unused-import
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {DiamondERC20Storage} from "./DiamondERC20Storage.sol";
+import {ADiamondERC20Storage} from "./ADiamondERC20Storage.sol";
 
 /**
  * @notice The Diamond standard module
@@ -11,7 +12,14 @@ import {DiamondERC20Storage} from "./DiamondERC20Storage.sol";
  * This is modified version of OpenZeppelin's ERC20 contract to be used as a Storage contract
  * by the Diamond Standard.
  */
-contract DiamondERC20 is DiamondERC20Storage {
+contract DiamondERC20 is ADiamondERC20Storage {
+    error ApproverIsZeroAddress();
+    error InsufficientAllowance(address spender, uint256 allowance, uint256 needed);
+    error InsufficientBalance(address sender, uint256 balance, uint256 needed);
+    error ReceiverIsZeroAddress();
+    error SenderIsZeroAddress();
+    error SpenderIsZeroAddress();
+
     /**
      * @notice Sets the values for {name} and {symbol}.
      *
@@ -61,86 +69,81 @@ contract DiamondERC20 is DiamondERC20Storage {
 
     /**
      * @notice Moves `amount` of tokens from `from` to `to`.
+     * @dev This function is not virtual, {_update} should be overridden instead.
      */
-    function _transfer(address from_, address to_, uint256 amount_) internal virtual {
-        require(from_ != address(0), "ERC20: transfer from the zero address");
-        require(to_ != address(0), "ERC20: transfer to the zero address");
+    function _transfer(address from_, address to_, uint256 amount_) internal {
+        if (from_ == address(0)) revert SenderIsZeroAddress();
+        if (to_ == address(0)) revert ReceiverIsZeroAddress();
 
-        _beforeTokenTransfer(from_, to_, amount_);
-
-        DERC20Storage storage _erc20Storage = _getErc20Storage();
-
-        uint256 fromBalance_ = _erc20Storage.balances[from_];
-
-        require(fromBalance_ >= amount_, "ERC20: transfer amount exceeds balance");
-
-        unchecked {
-            _erc20Storage.balances[from_] = fromBalance_ - amount_;
-
-            // Overflow not possible: the sum of all balances is capped by totalSupply, and the sum is preserved by
-            // decrementing then incrementing.
-            _erc20Storage.balances[to_] += amount_;
-        }
-
-        emit Transfer(from_, to_, amount_);
-
-        _afterTokenTransfer(from_, to_, amount_);
+        _update(from_, to_, amount_);
     }
 
     /**
      * @notice Creates `amount` tokens and assigns them to `account`, increasing
      * the total supply.
+     * @dev This function is not virtual, {_update} should be overridden instead.
      */
-    function _mint(address account_, uint256 amount_) internal virtual {
-        require(account_ != address(0), "ERC20: mint to the zero address");
+    function _mint(address account_, uint256 amount_) internal {
+        if (account_ == address(0)) revert ReceiverIsZeroAddress();
 
-        _beforeTokenTransfer(address(0), account_, amount_);
-
-        DERC20Storage storage _erc20Storage = _getErc20Storage();
-
-        _erc20Storage.totalSupply += amount_;
-
-        unchecked {
-            // Overflow not possible: balance + amount is at most totalSupply + amount, which is checked above.
-            _erc20Storage.balances[account_] += amount_;
-        }
-
-        emit Transfer(address(0), account_, amount_);
-
-        _afterTokenTransfer(address(0), account_, amount_);
+        _update(address(0), account_, amount_);
     }
 
     /**
      * @notice Destroys `amount` tokens from `account`, reducing the
      * total supply.
+     * @dev This function is not virtual, {_update} should be overridden instead.
      */
-    function _burn(address account_, uint256 amount_) internal virtual {
-        require(account_ != address(0), "ERC20: burn from the zero address");
+    function _burn(address account_, uint256 amount_) internal {
+        if (account_ == address(0)) revert SenderIsZeroAddress();
 
-        _beforeTokenTransfer(account_, address(0), amount_);
+        _update(account_, address(0), amount_);
+    }
 
+    /**
+     * @dev Transfers a `amount` amount of tokens from `from` to `to`, or alternatively mints (or burns) if `from`
+     * (or `to`) is the zero address. All customizations to transfers, mints, and burns should be done by overriding
+     * this function.
+     * Emits a {Transfer} event.
+     */
+    function _update(address from_, address to_, uint256 amount_) internal virtual {
         DERC20Storage storage _erc20Storage = _getErc20Storage();
 
-        uint256 accountBalance_ = _erc20Storage.balances[account_];
-        require(accountBalance_ >= amount_, "ERC20: burn amount exceeds balance");
+        if (from_ == address(0)) {
+            // Overflow check required: The rest of the code assumes that totalSupply never overflows
+            _erc20Storage.totalSupply += amount_;
+        } else {
+            uint256 fromBalance_ = _erc20Storage.balances[from_];
 
-        unchecked {
-            _erc20Storage.balances[account_] -= amount_;
-            // Overflow not possible: amount <= accountBalance <= totalSupply.
-            _erc20Storage.totalSupply -= amount_;
+            if (fromBalance_ < amount_) revert InsufficientBalance(from_, fromBalance_, amount_);
+
+            unchecked {
+                // Overflow not possible: amount <= fromBalance <= totalSupply.
+                _erc20Storage.balances[from_] = fromBalance_ - amount_;
+            }
         }
 
-        emit Transfer(account_, address(0), amount_);
+        if (to_ == address(0)) {
+            unchecked {
+                // Overflow not possible: amount <= fromBalance <= totalSupply.
+                _erc20Storage.totalSupply -= amount_;
+            }
+        } else {
+            unchecked {
+                // Overflow not possible: balance + amount is at most totalSupply + amount, which is checked above.
+                _erc20Storage.balances[to_] += amount_;
+            }
+        }
 
-        _afterTokenTransfer(account_, address(0), amount_);
+        emit Transfer(from_, to_, amount_);
     }
 
     /**
      * @notice Sets `amount` as the allowance of `spender` over the `owner` s tokens.
      */
     function _approve(address owner_, address spender_, uint256 amount_) internal virtual {
-        require(owner_ != address(0), "ERC20: approve from the zero address");
-        require(spender_ != address(0), "ERC20: approve to the zero address");
+        if (owner_ == address(0)) revert ApproverIsZeroAddress();
+        if (spender_ == address(0)) revert SpenderIsZeroAddress();
 
         _getErc20Storage().allowances[owner_][spender_] = amount_;
 
@@ -154,23 +157,12 @@ contract DiamondERC20 is DiamondERC20Storage {
         uint256 currentAllowance_ = allowance(owner_, spender_);
 
         if (currentAllowance_ != type(uint256).max) {
-            require(currentAllowance_ >= amount_, "ERC20: insufficient allowance");
+            if (currentAllowance_ < amount_)
+                revert InsufficientAllowance(spender_, currentAllowance_, amount_);
 
             unchecked {
                 _approve(owner_, spender_, currentAllowance_ - amount_);
             }
         }
     }
-
-    /**
-     * @notice Hook that is called before any transfer of tokens. This includes
-     * minting and burning.
-     */
-    function _beforeTokenTransfer(address from_, address to_, uint256 amount_) internal virtual {}
-
-    /**
-     * @notice Hook that is called after any transfer of tokens. This includes
-     * minting and burning.
-     */
-    function _afterTokenTransfer(address from_, address to_, uint256 amount_) internal virtual {}
 }

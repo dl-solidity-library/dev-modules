@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+// solhint-disable
+pragma solidity ^0.8.21;
 
-import {MultiOwnable} from "./../../access/MultiOwnable.sol";
+import {AMultiOwnable} from "./../../access/AMultiOwnable.sol";
 
-contract MultiOwnableMock is MultiOwnable {
+contract MultiOwnableMock is AMultiOwnable {
     function __MultiOwnableMock_init() external initializer {
-        __MultiOwnable_init();
+        __AMultiOwnable_init();
     }
 
     function mockInit() external {
-        __MultiOwnable_init();
+        __AMultiOwnable_init();
     }
 }

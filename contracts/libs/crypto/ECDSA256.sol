@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Reference: https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.1.0/contracts/utils/cryptography/P256.sol
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.21;
+
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
 /**
  * @notice Cryptography module
@@ -23,18 +25,22 @@ library ECDSA256 {
         uint256 lowSmax;
     }
 
+    // solhint-disable-next-line contract-name-capwords
     struct _JPoint {
         uint256 x;
         uint256 y;
         uint256 z;
     }
 
+    // solhint-disable-next-line contract-name-capwords
     struct _Inputs {
         uint256 r;
         uint256 s;
         uint256 x;
         uint256 y;
     }
+
+    error LengthIsNot64();
 
     /**
      * @notice The function to verify the ECDSA signature
@@ -69,7 +75,7 @@ library ECDSA256 {
             uint256 u2_;
 
             {
-                uint256 w_ = _invModPrime(inputs_.s, curveParams_.n);
+                uint256 w_ = Math.invModPrime(inputs_.s, curveParams_.n);
                 u1_ = mulmod(uint256(hashedMessage_), w_, curveParams_.n);
                 u2_ = mulmod(inputs_.r, w_, curveParams_.n);
             }
@@ -137,7 +143,7 @@ library ECDSA256 {
     ) private view returns (uint256 ax_, uint256 ay_) {
         if (point_.z == 0) return (0, 0);
 
-        uint256 zInverse_ = _invModPrime(point_.z, p_);
+        uint256 zInverse_ = Math.invModPrime(point_.z, p_);
 
         assembly ("memory-safe") {
             let zzInverse_ := mulmod(zInverse_, zInverse_, p_)
@@ -373,7 +379,7 @@ library ECDSA256 {
         bytes memory from2_
     ) private pure returns (uint256 leftPart_, uint256 rightPart_) {
         unchecked {
-            require(from2_.length == 64, "ECDSA256: length is not 64");
+            if (from2_.length != 64) revert LengthIsNot64();
 
             assembly ("memory-safe") {
                 leftPart_ := mload(add(from2_, 32))
@@ -382,42 +388,5 @@ library ECDSA256 {
 
             return (leftPart_, rightPart_);
         }
-    }
-
-    /**
-     * @dev Calculate the modular multiplicative inverse via Fermat's little theorem.
-     * Only works if `modulus_` is known to be a prime greater than `2`.
-     */
-    function _invModPrime(uint256 base_, uint256 modulus_) private view returns (uint256) {
-        unchecked {
-            return _modExp(base_, modulus_ - 2, modulus_);
-        }
-    }
-
-    /**
-     * @dev Returns the modular exponentiation of the specified base, exponent and modulus (b ** e % m).
-     */
-    function _modExp(
-        uint256 base_,
-        uint256 exponent_,
-        uint256 modulus_
-    ) private view returns (uint256 result_) {
-        require(modulus_ != 0, "ECDSA256: division by zero");
-
-        assembly ("memory-safe") {
-            let pointer_ := mload(0x40)
-
-            mstore(pointer_, 0x20)
-            mstore(add(pointer_, 0x20), 0x20)
-            mstore(add(pointer_, 0x40), 0x20)
-            mstore(add(pointer_, 0x60), base_)
-            mstore(add(pointer_, 0x80), exponent_)
-            mstore(add(pointer_, 0xa0), modulus_)
-
-            pop(staticcall(gas(), 0x05, pointer_, 0xc0, 0x00, 0x20))
-            result_ := mload(0x00)
-        }
-
-        return result_;
     }
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.21;
 
-import {ERC20, IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 /**
  * @notice This library is used to convert numbers that use token's N decimals to M decimals.
@@ -36,6 +36,8 @@ import {ERC20, IERC20, IERC20Metadata} from "@openzeppelin/contracts/token/ERC20
  * ```
  */
 library DecimalsConverter {
+    error ConversionFailed();
+
     /**
      * @notice The function to get the decimals of ERC20 token. Needed for bytecode optimization
      * @param token_ the ERC20 token
@@ -234,7 +236,7 @@ library DecimalsConverter {
     }
 
     function _safe(uint256 amount_) private pure returns (uint256) {
-        require(amount_ > 0, "DecimalsConverter: conversion failed");
+        if (amount_ == 0) revert ConversionFailed();
 
         return amount_;
     }

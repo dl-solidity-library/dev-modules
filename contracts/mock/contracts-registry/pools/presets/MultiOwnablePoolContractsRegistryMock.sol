@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+// solhint-disable
+pragma solidity ^0.8.21;
 
-import {MultiOwnablePoolContractsRegistry} from "../../../../contracts-registry/pools/presets/MultiOwnablePoolContractsRegistry.sol";
+import {AMultiOwnablePoolContractsRegistry} from "../../../../contracts-registry/pools/presets/AMultiOwnablePoolContractsRegistry.sol";
 
-contract MultiOwnablePoolContractsRegistryMock is MultiOwnablePoolContractsRegistry {
+contract MultiOwnablePoolContractsRegistryMock is AMultiOwnablePoolContractsRegistry {
     function addProxyPool(string memory name_, address poolAddress_) public override {
         _addProxyPool(name_, poolAddress_);
     }

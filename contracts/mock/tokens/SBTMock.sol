@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+// solhint-disable
+pragma solidity ^0.8.21;
 
-import {SBT} from "./../../tokens/SBT.sol";
+import {ASBT} from "./../../tokens/ASBT.sol";
 
-contract SBTMock is SBT {
+contract SBTMock is ASBT {
     function __SBTMock_init(string calldata name_, string calldata symbol_) external initializer {
-        __SBT_init(name_, symbol_);
+        __ASBT_init(name_, symbol_);
     }
 
     function mockInit(string calldata name_, string calldata symbol_) external {
-        __SBT_init(name_, symbol_);
+        __ASBT_init(name_, symbol_);
     }
 
     function mint(address to_, uint256 tokenId_) external {

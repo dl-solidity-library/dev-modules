@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+// solhint-disable
+pragma solidity ^0.8.21;
 
 import {TypeCaster} from "../../../libs/utils/TypeCaster.sol";
 
-import {Traversal, AvlTree} from "../../../libs/data-structures/AvlTree.sol";
+import {AvlTree, Traversal} from "../../../libs/data-structures/AvlTree.sol";
 
 contract AvlTreeMock {
     using TypeCaster for *;

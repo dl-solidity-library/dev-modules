@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// solhint-disable
 pragma solidity >=0.5.0 <0.8.0;
 
 import {UniswapV3PoolMock} from "./UniswapV3PoolMock.sol";

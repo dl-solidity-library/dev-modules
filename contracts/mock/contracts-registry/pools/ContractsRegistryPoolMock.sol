@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+// solhint-disable
+pragma solidity ^0.8.21;
 
 import {OwnableContractsRegistry} from "../../../contracts-registry/presets/OwnableContractsRegistry.sol";
 

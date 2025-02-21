@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+// solhint-disable
+pragma solidity ^0.8.21;
 
-import {Vesting} from "../../../finance/vesting/Vesting.sol";
+import {AVesting} from "../../../finance/vesting/AVesting.sol";
 import {ERC20Mock} from "../../tokens/ERC20Mock.sol";
 
-contract VestingMock is Vesting {
+contract VestingMock is AVesting {
     function __VestingMock_init() public initializer {
-        __Vesting_init();
+        __AVesting_init();
     }
 
     function vestingInit() public {
-        __Vesting_init();
+        __AVesting_init();
     }
 
     function createSchedule(Schedule memory _schedule) public {

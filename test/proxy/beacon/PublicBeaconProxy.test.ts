@@ -1,6 +1,7 @@
 import { ethers } from "hardhat";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+
 import { Reverter } from "@/test/helpers/reverter";
 
 import { PublicBeaconProxy, ProxyBeacon, ERC20Mock } from "@ethers-v6";

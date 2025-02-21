@@ -1,7 +1,9 @@
 import { ethers } from "hardhat";
+import { expect } from "chai";
+
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
-import { expect } from "chai";
+
 import { Reverter } from "@/test/helpers/reverter";
 import { precision } from "@/scripts/utils/utils";
 
@@ -31,22 +33,20 @@ describe("CompoundRateKeeper", () => {
 
   describe("access", () => {
     it("should not initialize twice", async () => {
-      await expect(keeper.mockInit(precision(1), 31536000)).to.be.revertedWith(
-        "Initializable: contract is not initializing",
-      );
-      await expect(keeper.__OwnableCompoundRateKeeper_init(precision(1), 31536000)).to.be.revertedWith(
-        "Initializable: contract is already initialized",
-      );
+      await expect(keeper.mockInit(precision(1), 31536000)).to.be.revertedWithCustomError(keeper, "NotInitializing");
+      await expect(keeper.__OwnableCompoundRateKeeper_init(precision(1), 31536000))
+        .to.be.revertedWithCustomError(keeper, "InvalidInitialization")
+        .withArgs();
     });
 
     it("only owner should call these functions", async () => {
-      await expect(keeper.connect(SECOND).setCapitalizationRate(precision(1))).to.be.revertedWith(
-        "Ownable: caller is not the owner",
-      );
+      await expect(keeper.connect(SECOND).setCapitalizationRate(precision(1)))
+        .to.be.revertedWithCustomError(keeper, "OwnableUnauthorizedAccount")
+        .withArgs(SECOND);
 
-      await expect(keeper.connect(SECOND).setCapitalizationPeriod(31536000)).to.be.revertedWith(
-        "Ownable: caller is not the owner",
-      );
+      await expect(keeper.connect(SECOND).setCapitalizationPeriod(31536000))
+        .to.be.revertedWithCustomError(keeper, "OwnableUnauthorizedAccount")
+        .withArgs(SECOND);
     });
   });
 
@@ -73,7 +73,9 @@ describe("CompoundRateKeeper", () => {
     });
 
     it("should revert if rate is less than zero", async () => {
-      await expect(keeper.setCapitalizationRate(precision(0.99999))).to.be.revertedWith("CRK: rate is less than 1");
+      await expect(keeper.setCapitalizationRate(precision(0.99999)))
+        .to.be.revertedWithCustomError(keeper, "RateIsLessThanOne")
+        .withArgs(precision(0.99999));
     });
 
     it("should revert if compound rate reaches max limit", async () => {
@@ -83,7 +85,9 @@ describe("CompoundRateKeeper", () => {
       await time.setNextBlockTimestamp((await time.latest()) + 100 * 31536000);
       await keeper.emergencyUpdateCompoundRate();
 
-      await expect(keeper.setCapitalizationRate(precision(1.1))).to.be.revertedWith("CRK: max rate is reached");
+      await expect(keeper.setCapitalizationRate(precision(1.1)))
+        .to.be.revertedWithCustomError(keeper, "MaxRateIsReached")
+        .withArgs();
     });
   });
 
@@ -99,7 +103,9 @@ describe("CompoundRateKeeper", () => {
     });
 
     it("should revert if capitalization period is zero", async () => {
-      await expect(keeper.setCapitalizationPeriod(0)).to.be.revertedWith("CRK: invalid period");
+      await expect(keeper.setCapitalizationPeriod(0))
+        .to.be.revertedWithCustomError(keeper, "CapitalizationPeriodIsZero")
+        .withArgs();
     });
 
     it("should revert if compound rate reaches max limit", async () => {
@@ -109,7 +115,9 @@ describe("CompoundRateKeeper", () => {
       await time.setNextBlockTimestamp((await time.latest()) + 100 * 31536000);
       await keeper.emergencyUpdateCompoundRate();
 
-      await expect(keeper.setCapitalizationPeriod(1)).to.be.revertedWith("CRK: max rate is reached");
+      await expect(keeper.setCapitalizationPeriod(1))
+        .to.be.revertedWithCustomError(keeper, "MaxRateIsReached")
+        .withArgs();
     });
   });
 

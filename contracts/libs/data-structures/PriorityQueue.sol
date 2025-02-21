@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.21;
 
 import {TypeCaster} from "../utils/TypeCaster.sol";
 
@@ -39,6 +39,8 @@ library PriorityQueue {
     struct UintQueue {
         Queue _queue;
     }
+
+    error QueueIsEmpty();
 
     /**
      * @notice The function to add an element to the uint256 queue. O(log(n)) complex
@@ -368,6 +370,6 @@ library PriorityQueue {
     }
 
     function _requireNotEmpty(Queue storage queue) private view {
-        require(_length(queue) > 0, "PriorityQueue: empty queue");
+        if (_length(queue) == 0) revert QueueIsEmpty();
     }
 }

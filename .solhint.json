@@ -3,12 +3,14 @@
   "plugins": ["prettier"],
   "rules": {
     "prettier/prettier": "warn",
-    "reentrancy": "off",
-    "modifier-name-mixedcase": "off",
+    "reentrancy": "warn",
+    "modifier-name-mixedcase": "warn",
     "no-empty-blocks": "off",
-    "func-visibility": "off",
-    "max-states-count": "off",
+    "func-visibility": ["warn", { "ignoreConstructors": true }],
+    "max-states-count": "warn",
     "not-rely-on-time": "off",
-    "compiler-version": "off"
+    "func-name-mixedcase": "off",
+    "no-inline-assembly": "off",
+    "compiler-version": ["off"]
   }
 }

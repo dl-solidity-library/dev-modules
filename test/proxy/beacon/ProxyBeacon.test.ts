@@ -1,8 +1,9 @@
 import { ethers } from "hardhat";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
+
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+
 import { Reverter } from "@/test/helpers/reverter";
-import { ZERO_ADDR } from "@/scripts/utils/constants";
 
 import { ProxyBeacon, ERC20Mock } from "@ethers-v6";
 
@@ -31,7 +32,7 @@ describe("ProxyBeacon", () => {
 
   describe("functions", () => {
     it("should upgrade", async () => {
-      expect(await proxyBeacon.implementation()).to.equal(ZERO_ADDR);
+      expect(await proxyBeacon.implementation()).to.equal(ethers.ZeroAddress);
 
       await proxyBeacon.upgradeTo(await token.getAddress());
 
@@ -39,13 +40,15 @@ describe("ProxyBeacon", () => {
     });
 
     it("should not upgrade to non-contract", async () => {
-      await expect(proxyBeacon.upgradeTo(SECOND)).to.be.revertedWith("ProxyBeacon: not a contract");
+      await expect(proxyBeacon.upgradeTo(SECOND))
+        .to.be.revertedWithCustomError(proxyBeacon, "NewImplementationNotAContract")
+        .withArgs(SECOND);
     });
 
     it("only owner should upgrade", async () => {
-      await expect(proxyBeacon.connect(SECOND).upgradeTo(await token.getAddress())).to.be.revertedWith(
-        "PermanentOwnable: caller is not the owner",
-      );
+      await expect(proxyBeacon.connect(SECOND).upgradeTo(await token.getAddress()))
+        .to.be.revertedWithCustomError(proxyBeacon, "UnauthorizedAccount")
+        .withArgs(SECOND);
     });
   });
 });

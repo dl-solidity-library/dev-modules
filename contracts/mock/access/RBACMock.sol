@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+// solhint-disable
+pragma solidity ^0.8.21;
 
 import {TypeCaster} from "../../libs/utils/TypeCaster.sol";
 
-import {RBAC} from "../../access/RBAC.sol";
+import {ARBAC} from "../../access/ARBAC.sol";
 
-contract RBACMock is RBAC {
+contract RBACMock is ARBAC {
     using TypeCaster for string;
 
     function __RBACMock_init() external initializer {
-        __RBAC_init();
+        __ARBAC_init();
 
         _grantRoles(msg.sender, MASTER_ROLE.asSingletonArray());
     }
 
     function mockInit() external {
-        __RBAC_init();
+        __ARBAC_init();
     }
 }

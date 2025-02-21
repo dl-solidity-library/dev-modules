@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+// solhint-disable
+pragma solidity ^0.8.21;
 
 import {OwnableCompoundRateKeeper} from "../../../finance/compound-rate-keeper/presets/OwnableCompoundRateKeeper.sol";
 
 contract CompoundRateKeeperMock is OwnableCompoundRateKeeper {
     function mockInit(uint256 capitalizationRate_, uint64 capitalizationPeriod_) external {
-        __CompoundRateKeeper_init(capitalizationRate_, capitalizationPeriod_);
+        __ACompoundRateKeeper_init(capitalizationRate_, capitalizationPeriod_);
     }
 
     function setCapitalizationRateAndPeriod(

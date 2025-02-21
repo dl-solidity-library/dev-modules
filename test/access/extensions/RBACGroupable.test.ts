@@ -1,11 +1,12 @@
 import { ethers } from "hardhat";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+
 import { Reverter } from "@/test/helpers/reverter";
 
 import { RBACGroupableMock } from "@ethers-v6";
 
-describe("RBAC", () => {
+describe("RBACGroupable", () => {
   const reverter = new Reverter();
 
   let OWNER: SignerWithAddress;
@@ -26,9 +27,9 @@ describe("RBAC", () => {
 
   afterEach(reverter.revert);
 
-  describe("__RBACGroupable_init", () => {
+  describe("__ARBACGroupable_init", () => {
     it("should not initialize twice", async () => {
-      await expect(rbac.mockInit()).to.be.revertedWith("Initializable: contract is not initializing");
+      await expect(rbac.mockInit()).to.be.revertedWithCustomError(rbac, "NotInitializing").withArgs();
     });
   });
 
@@ -90,13 +91,15 @@ describe("RBAC", () => {
 
     describe("grantGroupRoles", () => {
       it("should revert if no permission", async () => {
-        await expect(rbac.connect(SECOND).grantGroupRoles(GROUP_ALL_ROLES, ALL_ROLES)).to.be.revertedWith(
-          "RBAC: no CREATE permission for resource RBAC_RESOURCE",
-        );
+        await expect(rbac.connect(SECOND).grantGroupRoles(GROUP_ALL_ROLES, ALL_ROLES))
+          .to.be.revertedWithCustomError(rbac, "NoPermissionForResource")
+          .withArgs(SECOND.address, "CREATE", "RBAC_RESOURCE");
       });
 
       it("should revert if no roles provided", async () => {
-        await expect(rbac.grantGroupRoles(GROUP_ALL_ROLES, [])).to.be.revertedWith("RBACGroupable: empty roles");
+        await expect(rbac.grantGroupRoles(GROUP_ALL_ROLES, []))
+          .to.be.revertedWithCustomError(rbac, "EmptyRoles")
+          .withArgs();
       });
 
       it("should grant group roles if all conditions are met", async () => {
@@ -118,13 +121,15 @@ describe("RBAC", () => {
 
       describe("revokeGroupRoles", () => {
         it("should revert if no permission", async () => {
-          await expect(rbac.connect(SECOND).revokeGroupRoles(GROUP_ALL_ROLES, ROLES_01)).to.be.rejectedWith(
-            "RBAC: no DELETE permission for resource RBAC_RESOURCE",
-          );
+          await expect(rbac.connect(SECOND).revokeGroupRoles(GROUP_ALL_ROLES, ROLES_01))
+            .to.be.revertedWithCustomError(rbac, "NoPermissionForResource")
+            .withArgs(SECOND.address, "DELETE", "RBAC_RESOURCE");
         });
 
         it("should revert if no roles provided", async () => {
-          await expect(rbac.revokeGroupRoles(GROUP_ALL_ROLES, [])).to.be.revertedWith("RBACGroupable: empty roles");
+          await expect(rbac.revokeGroupRoles(GROUP_ALL_ROLES, []))
+            .to.be.revertedWithCustomError(rbac, "EmptyRoles")
+            .withArgs();
         });
 
         it("should revoke group roles if all conditions are met", async () => {
@@ -138,13 +143,15 @@ describe("RBAC", () => {
 
       describe("addUserToGroups", () => {
         it("should revert if no permission", async () => {
-          await expect(
-            rbac.connect(SECOND).addUserToGroups(SECOND.address, [GROUP_ROLES01, GROUP_ROLES12]),
-          ).to.be.rejectedWith("RBAC: no CREATE permission for resource RBAC_RESOURCE");
+          await expect(rbac.connect(SECOND).addUserToGroups(SECOND.address, [GROUP_ROLES01, GROUP_ROLES12]))
+            .to.be.revertedWithCustomError(rbac, "NoPermissionForResource")
+            .withArgs(SECOND.address, "CREATE", "RBAC_RESOURCE");
         });
 
         it("should revert if no groups provided", async () => {
-          await expect(rbac.addUserToGroups(SECOND.address, [])).to.be.revertedWith("RBACGroupable: empty groups");
+          await expect(rbac.addUserToGroups(SECOND.address, []))
+            .to.be.revertedWithCustomError(rbac, "EmptyGroups")
+            .withArgs();
         });
 
         it("should add the user to groups if all conditions are met", async () => {
@@ -158,9 +165,9 @@ describe("RBAC", () => {
 
       describe("toggleDefaultGroup", () => {
         it("should revert if no permission", async () => {
-          await expect(rbac.connect(SECOND).toggleDefaultGroup()).to.be.rejectedWith(
-            "RBAC: no UPDATE permission for resource RBAC_RESOURCE",
-          );
+          await expect(rbac.connect(SECOND).toggleDefaultGroup())
+            .to.be.revertedWithCustomError(rbac, "NoPermissionForResource")
+            .withArgs(SECOND.address, "UPDATE", "RBAC_RESOURCE");
         });
 
         it("should add the user to the default group automatically", async () => {
@@ -191,15 +198,15 @@ describe("RBAC", () => {
 
         describe("removeUserFromGroups", () => {
           it("should revert if no permission", async () => {
-            await expect(rbac.connect(SECOND).removeUserFromGroups(SECOND.address, [GROUP_ROLES01])).to.be.revertedWith(
-              "RBAC: no DELETE permission for resource RBAC_RESOURCE",
-            );
+            await expect(rbac.connect(SECOND).removeUserFromGroups(SECOND.address, [GROUP_ROLES01]))
+              .to.be.revertedWithCustomError(rbac, "NoPermissionForResource")
+              .withArgs(SECOND.address, "DELETE", "RBAC_RESOURCE");
           });
 
           it("should revert if no groups provided", async () => {
-            await expect(rbac.removeUserFromGroups(SECOND.address, [])).to.be.revertedWith(
-              "RBACGroupable: empty groups",
-            );
+            await expect(rbac.removeUserFromGroups(SECOND.address, []))
+              .to.be.revertedWithCustomError(rbac, "EmptyGroups")
+              .withArgs();
           });
 
           it("should remove the user from groups if all conditions are met", async () => {

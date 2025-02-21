@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+// solhint-disable
 pragma solidity >=0.5.0 <0.8.0;
 
 import {Oracle} from "@uniswap/v3-core/contracts/libraries/Oracle.sol";

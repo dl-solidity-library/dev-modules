@@ -21,7 +21,7 @@ Solidity modules and utilities that **go far beyond mediocre solidity**.
 - Hyperoptimized **uint512** BigInt library
 - Utilities to ease work with memory, types, ERC20 decimals, arrays, sets, and ZK proofs
 
-Built leveraging [OpenZeppelin Contracts](https://github.com/OpenZeppelin/openzeppelin-contracts) (4.9.6).
+Built leveraging [OpenZeppelin Contracts](https://github.com/OpenZeppelin/openzeppelin-contracts) (5.1.0).
 
 ## Overview
 
@@ -44,7 +44,7 @@ You will find the smart contracts in the `/contracts` directory. Feel free to pl
 Once the [npm package](https://www.npmjs.com/package/@solarity/solidity-lib) is installed, one can use the library just like that:
 
 ```solidity
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.21;
 
 import {OwnableContractsRegistry} from "@solarity/solidity-lib/contracts-registry/presets/OwnableContractsRegistry.sol";
 

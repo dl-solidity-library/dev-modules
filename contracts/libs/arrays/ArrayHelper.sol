@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.21;
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
@@ -7,6 +7,8 @@ import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
  * @notice A simple library to work with arrays
  */
 library ArrayHelper {
+    error InvalidRange(uint256 beginIndex, uint256 endIndex);
+
     /**
      * @notice The function that searches for the index of the first occurring element, which is
      * greater than or equal to the `element_`. The time complexity is O(log n)
@@ -97,7 +99,7 @@ library ArrayHelper {
         uint256 beginIndex_,
         uint256 endIndex_
     ) internal view returns (uint256) {
-        require(beginIndex_ <= endIndex_, "ArrayHelper: wrong range");
+        if (beginIndex_ > endIndex_) revert InvalidRange(beginIndex_, endIndex_);
 
         if (beginIndex_ == 0) {
             return prefixes[endIndex_];

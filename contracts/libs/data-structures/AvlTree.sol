@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.21;
+// solhint-disable-previous-line one-contract-per-file
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
@@ -65,6 +66,11 @@ library AvlTree {
     struct UintAVL {
         Tree _tree;
     }
+
+    error NodeAlreadyExists(bytes32 key);
+    error NodeDoesNotExist(bytes32 key);
+    error KeyIsZero();
+    error TreeNotEmpty();
 
     /**
      * @notice The function to set a custom comparator function, that will be used to build the uint256 tree.
@@ -424,7 +430,7 @@ library AvlTree {
         Tree storage tree,
         function(bytes32, bytes32) view returns (int256) comparator_
     ) private {
-        require(_size(tree) == 0, "AvlTree: the tree must be empty");
+        if (_size(tree) != 0) revert TreeNotEmpty();
 
         tree.isCustomComparatorSet = true;
 
@@ -432,7 +438,7 @@ library AvlTree {
     }
 
     function _insert(Tree storage tree, bytes32 key_, bytes32 value_) private {
-        require(key_ != 0, "AvlTree: key is not allowed to be 0");
+        if (key_ == 0) revert KeyIsZero();
 
         tree.totalCount++;
 
@@ -448,7 +454,7 @@ library AvlTree {
     }
 
     function _remove(Tree storage tree, bytes32 key_) private {
-        require(key_ != 0, "AvlTree: key is not allowed to be 0");
+        if (key_ == 0) revert KeyIsZero();
 
         tree.root = _removeNode(tree.tree, tree.root, 0, bytes32(key_), _getComparator(tree));
 
@@ -490,7 +496,7 @@ library AvlTree {
                 comparator_
             );
         } else if (comparison_ == 0) {
-            revert("AvlTree: the node already exists");
+            revert NodeAlreadyExists(key_);
         } else {
             _tree[node_].right = _insertNode(
                 _tree,
@@ -513,7 +519,7 @@ library AvlTree {
         bytes32 key_,
         function(bytes32, bytes32) view returns (int256) comparator_
     ) private returns (uint64) {
-        require(node_ != 0, "AvlTree: the node doesn't exist");
+        if (node_ == 0) revert NodeDoesNotExist(key_);
 
         int256 comparison_ = comparator_(key_, _tree[node_].key);
 
@@ -683,7 +689,7 @@ library AvlTree {
     function _get(Tree storage tree, bytes32 key_) private view returns (bytes32) {
         uint64 index_ = _search(tree.tree, tree.root, key_, _getComparator(tree));
 
-        require(index_ != 0, "AvlTree: the node doesn't exist");
+        if (index_ == 0) revert NodeDoesNotExist(key_);
 
         return tree.tree[index_].value;
     }
@@ -764,6 +770,8 @@ library Traversal {
         uint256 treeMappingSlot;
         uint64 currentNode;
     }
+
+    error NoNodesLeft();
 
     /**
      * @notice The function to check if the iterator is currently valid (has not reached the end of the traversal).
@@ -853,7 +861,7 @@ library Traversal {
     ) internal view returns (bytes32, bytes32) {
         uint64 currentNodeIndex_ = iterator_.currentNode;
 
-        require(currentNodeIndex_ != 0, "Traversal: no more nodes");
+        if (currentNodeIndex_ == 0) revert NoNodesLeft();
 
         AvlTree.Node memory node_ = _getNode(iterator_.treeMappingSlot, currentNodeIndex_);
 

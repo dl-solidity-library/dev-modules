@@ -1,8 +1,9 @@
 import { ethers } from "hardhat";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
+
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+
 import { Reverter } from "@/test/helpers/reverter";
-import { ZERO_ADDR } from "@/scripts/utils/constants";
 
 import { MultiOwnableContractsRegistry } from "@ethers-v6";
 
@@ -28,47 +29,47 @@ describe("MultiOwnableContractsRegistry", () => {
 
   describe("access", () => {
     it("should not initialize twice", async () => {
-      await expect(contractsRegistry.__MultiOwnableContractsRegistry_init()).to.be.revertedWith(
-        "Initializable: contract is already initialized",
-      );
+      await expect(contractsRegistry.__MultiOwnableContractsRegistry_init())
+        .to.be.revertedWithCustomError(contractsRegistry, "InvalidInitialization")
+        .withArgs();
     });
 
     it("only owner should call these functions", async () => {
-      await expect(contractsRegistry.connect(SECOND).injectDependencies("")).to.be.revertedWith(
-        "MultiOwnable: caller is not the owner",
-      );
+      await expect(contractsRegistry.connect(SECOND).injectDependencies(""))
+        .to.be.revertedWithCustomError(contractsRegistry, "UnauthorizedAccount")
+        .withArgs(SECOND.address);
 
-      await expect(contractsRegistry.connect(SECOND).injectDependenciesWithData("", "0x")).to.be.revertedWith(
-        "MultiOwnable: caller is not the owner",
-      );
+      await expect(contractsRegistry.connect(SECOND).injectDependenciesWithData("", "0x"))
+        .to.be.revertedWithCustomError(contractsRegistry, "UnauthorizedAccount")
+        .withArgs(SECOND.address);
 
-      await expect(contractsRegistry.connect(SECOND).upgradeContract("", ZERO_ADDR)).to.be.revertedWith(
-        "MultiOwnable: caller is not the owner",
-      );
+      await expect(contractsRegistry.connect(SECOND).upgradeContract("", ethers.ZeroAddress))
+        .to.be.revertedWithCustomError(contractsRegistry, "UnauthorizedAccount")
+        .withArgs(SECOND.address);
 
-      await expect(contractsRegistry.connect(SECOND).upgradeContractAndCall("", ZERO_ADDR, "0x")).to.be.revertedWith(
-        "MultiOwnable: caller is not the owner",
-      );
+      await expect(contractsRegistry.connect(SECOND).upgradeContractAndCall("", ethers.ZeroAddress, "0x"))
+        .to.be.revertedWithCustomError(contractsRegistry, "UnauthorizedAccount")
+        .withArgs(SECOND.address);
 
-      await expect(contractsRegistry.connect(SECOND).addContract("", ZERO_ADDR)).to.be.revertedWith(
-        "MultiOwnable: caller is not the owner",
-      );
+      await expect(contractsRegistry.connect(SECOND).addContract("", ethers.ZeroAddress))
+        .to.be.revertedWithCustomError(contractsRegistry, "UnauthorizedAccount")
+        .withArgs(SECOND.address);
 
-      await expect(contractsRegistry.connect(SECOND).addProxyContract("", ZERO_ADDR)).to.be.revertedWith(
-        "MultiOwnable: caller is not the owner",
-      );
+      await expect(contractsRegistry.connect(SECOND).addProxyContract("", ethers.ZeroAddress))
+        .to.be.revertedWithCustomError(contractsRegistry, "UnauthorizedAccount")
+        .withArgs(SECOND.address);
 
-      await expect(contractsRegistry.connect(SECOND).addProxyContractAndCall("", ZERO_ADDR, "0x")).to.be.revertedWith(
-        "MultiOwnable: caller is not the owner",
-      );
+      await expect(contractsRegistry.connect(SECOND).addProxyContractAndCall("", ethers.ZeroAddress, "0x"))
+        .to.be.revertedWithCustomError(contractsRegistry, "UnauthorizedAccount")
+        .withArgs(SECOND.address);
 
-      await expect(contractsRegistry.connect(SECOND).justAddProxyContract("", ZERO_ADDR)).to.be.revertedWith(
-        "MultiOwnable: caller is not the owner",
-      );
+      await expect(contractsRegistry.connect(SECOND).justAddProxyContract("", ethers.ZeroAddress))
+        .to.be.revertedWithCustomError(contractsRegistry, "UnauthorizedAccount")
+        .withArgs(SECOND.address);
 
-      await expect(contractsRegistry.connect(SECOND).removeContract("")).to.be.revertedWith(
-        "MultiOwnable: caller is not the owner",
-      );
+      await expect(contractsRegistry.connect(SECOND).removeContract(""))
+        .to.be.revertedWithCustomError(contractsRegistry, "UnauthorizedAccount")
+        .withArgs(SECOND.address);
     });
   });
 
@@ -78,17 +79,17 @@ describe("MultiOwnableContractsRegistry", () => {
 
       await expect(contractsRegistry.injectDependenciesWithData("", "0x")).to.be.reverted;
 
-      await expect(contractsRegistry.upgradeContract("", ZERO_ADDR)).to.be.reverted;
+      await expect(contractsRegistry.upgradeContract("", ethers.ZeroAddress)).to.be.reverted;
 
-      await expect(contractsRegistry.upgradeContractAndCall("", ZERO_ADDR, "0x")).to.be.reverted;
+      await expect(contractsRegistry.upgradeContractAndCall("", ethers.ZeroAddress, "0x")).to.be.reverted;
 
-      await expect(contractsRegistry.addContract("", ZERO_ADDR)).to.be.reverted;
+      await expect(contractsRegistry.addContract("", ethers.ZeroAddress)).to.be.reverted;
 
-      await expect(contractsRegistry.addProxyContract("", ZERO_ADDR)).to.be.reverted;
+      await expect(contractsRegistry.addProxyContract("", ethers.ZeroAddress)).to.be.reverted;
 
-      await expect(contractsRegistry.addProxyContractAndCall("", ZERO_ADDR, "0x")).to.be.reverted;
+      await expect(contractsRegistry.addProxyContractAndCall("", ethers.ZeroAddress, "0x")).to.be.reverted;
 
-      await expect(contractsRegistry.justAddProxyContract("", ZERO_ADDR)).to.be.reverted;
+      await expect(contractsRegistry.justAddProxyContract("", ethers.ZeroAddress)).to.be.reverted;
 
       await expect(contractsRegistry.removeContract("")).to.be.reverted;
     });

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.21;
 
 import {TypeCaster} from "../../utils/TypeCaster.sol";
 
@@ -41,6 +41,9 @@ library Vector {
     struct UintVector {
         Vector _vector;
     }
+
+    error IndexOutOfBounds(uint256 index, uint256 vectorLength);
+    error PopEmptyVector();
 
     /**
      * @notice The UintVector constructor, creates an empty vector instance, O(1) complex
@@ -367,7 +370,7 @@ library Vector {
     function _pop(Vector memory vector) private pure {
         uint256 length_ = _length(vector);
 
-        require(length_ > 0, "Vector: empty vector");
+        if (length_ == 0) revert PopEmptyVector();
 
         assembly {
             mstore(mload(add(vector, 0x20)), sub(length_, 0x1))
@@ -423,7 +426,7 @@ library Vector {
     }
 
     function _requireInBounds(Vector memory vector, uint256 index_) private pure {
-        require(index_ < _length(vector), "Vector: out of bounds");
+        if (index_ >= _length(vector)) revert IndexOutOfBounds(index_, _length(vector));
     }
 
     function _clean(uint256 dataPointer_, uint256 slots_) private pure {

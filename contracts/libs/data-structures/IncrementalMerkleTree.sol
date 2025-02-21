@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.21;
 
 /**
  * @notice Incremental Merkle Tree module
@@ -56,6 +56,10 @@ library IncrementalMerkleTree {
     struct UintIMT {
         IMT _tree;
     }
+
+    error NewHeightMustBeGreater(uint256 currentHeight, uint256 newHeight);
+    error TreeIsNotEmpty();
+    error TreeIsFull();
 
     /**
      * @notice The function to set the height of the uint256 tree.
@@ -301,10 +305,9 @@ library IncrementalMerkleTree {
     }
 
     function _setHeight(IMT storage tree, uint256 height_) private {
-        require(
-            height_ > _height(tree),
-            "IncrementalMerkleTree: the height must be greater than the current one"
-        );
+        uint256 currentHeight_ = _height(tree);
+
+        if (height_ <= currentHeight_) revert NewHeightMustBeGreater(currentHeight_, height_);
 
         tree.isStrictHeightSet = true;
 
@@ -318,7 +321,7 @@ library IncrementalMerkleTree {
         function(bytes32) view returns (bytes32) hash1_,
         function(bytes32, bytes32) view returns (bytes32) hash2_
     ) private {
-        require(_length(tree) == 0, "IncrementalMerkleTree: the tree must be empty");
+        if (_length(tree) != 0) revert TreeIsNotEmpty();
 
         tree.isCustomHasherSet = true;
 
@@ -353,9 +356,7 @@ library IncrementalMerkleTree {
         }
 
         if (index_ == treeHeight_) {
-            if (tree.isStrictHeightSet) {
-                revert("IncrementalMerkleTree: the tree is full");
-            }
+            if (tree.isStrictHeightSet) revert TreeIsFull();
 
             tree.branches.push(resultValue_);
         } else {

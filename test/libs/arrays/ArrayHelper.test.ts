@@ -1,8 +1,8 @@
 import { ethers } from "hardhat";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+
 import { Reverter } from "@/test/helpers/reverter";
-import { ZERO_BYTES32 } from "@/scripts/utils/constants";
 
 import { ArrayHelperMock } from "@ethers-v6";
 
@@ -133,9 +133,11 @@ describe("ArrayHelper", () => {
       it("should revert if the first index is greater than the last one", async () => {
         await mock.setArray((await mock.countPrefixes(array)).map((e) => Number(e)));
 
-        await expect(mock.getRangeSum(array.length - 1, 0)).to.be.revertedWith("ArrayHelper: wrong range");
-        await expect(mock.getRangeSum(1, 0)).to.be.revertedWith("ArrayHelper: wrong range");
-        await expect(mock.getRangeSum(2, 1)).to.be.revertedWith("ArrayHelper: wrong range");
+        await expect(mock.getRangeSum(array.length - 1, 0))
+          .to.be.revertedWithCustomError(mock, "InvalidRange")
+          .withArgs(array.length - 1, 0);
+        await expect(mock.getRangeSum(1, 0)).to.be.revertedWithCustomError(mock, "InvalidRange").withArgs(1, 0);
+        await expect(mock.getRangeSum(2, 1)).to.be.revertedWithCustomError(mock, "InvalidRange").withArgs(2, 1);
       });
 
       it("should revert if one of the indexes is out of range", async () => {
@@ -218,9 +220,9 @@ describe("ArrayHelper", () => {
 
     it("should reverse bytes32 array", async () => {
       const bytes32Arrays = [
-        ZERO_BYTES32.replaceAll("0000", "1234"),
-        ZERO_BYTES32.replaceAll("0000", "4321"),
-        ZERO_BYTES32.replaceAll("0000", "abcd"),
+        ethers.ZeroHash.replaceAll("0000", "1234"),
+        ethers.ZeroHash.replaceAll("0000", "4321"),
+        ethers.ZeroHash.replaceAll("0000", "abcd"),
       ];
 
       const arr = await mock.reverseBytes32(bytes32Arrays);
@@ -293,9 +295,9 @@ describe("ArrayHelper", () => {
 
     it("should insert bytes32 array", async () => {
       const bytes32Arrays = [
-        ZERO_BYTES32.replaceAll("0000", "1111"),
-        ZERO_BYTES32.replaceAll("0000", "2222"),
-        ZERO_BYTES32.replaceAll("0000", "3333"),
+        ethers.ZeroHash.replaceAll("0000", "1111"),
+        ethers.ZeroHash.replaceAll("0000", "2222"),
+        ethers.ZeroHash.replaceAll("0000", "3333"),
       ];
 
       const base = [bytes32Arrays[0], bytes32Arrays[1]];
@@ -341,9 +343,9 @@ describe("ArrayHelper", () => {
     });
 
     it("should crop bytes32 array properly", async () => {
-      let arr = await mock.cropBytes([ZERO_BYTES32, ZERO_BYTES32], 1);
+      let arr = await mock.cropBytes([ethers.ZeroHash, ethers.ZeroHash], 1);
 
-      expect(arr).to.deep.equal([ZERO_BYTES32]);
+      expect(arr).to.deep.equal([ethers.ZeroHash]);
     });
 
     it("should not crop uint256 array if new length more than initial length", async () => {
@@ -371,7 +373,7 @@ describe("ArrayHelper", () => {
     });
 
     it("should not crop bytes32 array if new length more than initial length", async () => {
-      let arr = await mock.cropBytes([ZERO_BYTES32, ZERO_BYTES32], 2);
+      let arr = await mock.cropBytes([ethers.ZeroHash, ethers.ZeroHash], 2);
 
       expect(arr.length).to.equal(2);
     });

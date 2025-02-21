@@ -1,8 +1,9 @@
 import { ethers } from "hardhat";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
+
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+
 import { Reverter } from "@/test/helpers/reverter";
-import { ZERO_ADDR } from "@/scripts/utils/constants";
 
 import {
   PoolFactoryMock,
@@ -57,7 +58,7 @@ describe("PoolFactory", () => {
     );
     poolFactory = <PoolFactoryMock>PoolFactory.attach(await contractsRegistry.getPoolFactoryContract());
 
-    await poolContractsRegistry.__OwnablePoolContractsRegistry_init();
+    await poolContractsRegistry.__AOwnablePoolContractsRegistry_init();
 
     await contractsRegistry.injectDependencies(await contractsRegistry.POOL_CONTRACTS_REGISTRY_NAME());
     await contractsRegistry.injectDependencies(await contractsRegistry.POOL_FACTORY_NAME());
@@ -72,7 +73,9 @@ describe("PoolFactory", () => {
 
   describe("access", () => {
     it("should not set dependencies from non dependant", async () => {
-      await expect(poolFactory.setDependencies(OWNER, "0x")).to.be.revertedWith("Dependant: not an injector");
+      await expect(poolFactory.setDependencies(OWNER, "0x"))
+        .to.be.revertedWithCustomError(poolFactory, "NotAnInjector")
+        .withArgs(await poolContractsRegistry.getInjector(), OWNER.address);
     });
   });
 
@@ -100,14 +103,16 @@ describe("PoolFactory", () => {
         const beaconProxy = <PublicBeaconProxy>PublicBeaconProxy.attach(await pool.getAddress());
 
         expect(await beaconProxy.implementation()).to.equal(await poolImpl.getAddress());
-        expect(await pool.token()).not.to.equal(ZERO_ADDR);
+        expect(await pool.token()).not.to.equal(ethers.ZeroAddress);
       });
 
       it("should not register pools", async () => {
         await contractsRegistry.addContract(await contractsRegistry.POOL_FACTORY_NAME(), OWNER);
         await contractsRegistry.injectDependencies(await contractsRegistry.POOL_CONTRACTS_REGISTRY_NAME());
 
-        await expect(poolFactory.deployPool()).to.be.revertedWith("PoolContractsRegistry: not a factory");
+        await expect(poolFactory.deployPool())
+          .to.be.revertedWithCustomError(poolContractsRegistry, "CallerNotAFactory")
+          .withArgs(await poolFactory.getAddress(), OWNER.address);
       });
 
       it("should deploy several pools", async () => {
@@ -124,12 +129,13 @@ describe("PoolFactory", () => {
         const PoolMock = await ethers.getContractFactory("PoolMock");
         const pool = <PoolMock>PoolMock.attach((await poolContractsRegistry.listPools(NAME_1, 0, 1))[0]);
 
-        await expect(poolContractsRegistry.addProxyPool(NAME_1, await poolFactory.getAddress())).to.be.revertedWith(
-          "PoolContractsRegistry: not a factory",
-        );
-        await expect(pool.setDependencies(await contractsRegistry.getAddress(), "0x")).to.be.revertedWith(
-          "Dependant: not an injector",
-        );
+        await expect(poolContractsRegistry.addProxyPool(NAME_1, await poolFactory.getAddress()))
+          .to.be.revertedWithCustomError(poolContractsRegistry, "CallerNotAFactory")
+          .withArgs(OWNER.address, await poolFactory.getAddress());
+
+        await expect(pool.setDependencies(await contractsRegistry.getAddress(), "0x"))
+          .to.be.revertedWithCustomError(poolFactory, "NotAnInjector")
+          .withArgs(await pool.getInjector(), OWNER.address);
       });
 
       it("should upgrade pools", async () => {

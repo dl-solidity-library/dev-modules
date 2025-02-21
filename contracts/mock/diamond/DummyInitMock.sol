@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+// solhint-disable
+pragma solidity ^0.8.21;
 
 import {DummyFacetMock} from "./DummyFacetMock.sol";
 
 contract DummyInitMock is DummyFacetMock {
     event Initialized();
+
+    error InitError();
 
     function init() external {
         setDummyString("dummy facet initialized");
@@ -16,6 +19,6 @@ contract DummyInitMock is DummyFacetMock {
     }
 
     function initWithErrorMsg() external pure {
-        revert("DiamondInit: init error");
+        revert InitError();
     }
 }

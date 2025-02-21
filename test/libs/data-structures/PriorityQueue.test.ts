@@ -1,5 +1,6 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
+
 import { Reverter } from "@/test/helpers/reverter";
 
 import { PriorityQueueMock } from "@ethers-v6";
@@ -153,9 +154,9 @@ describe("PriorityQueue", () => {
       });
 
       it("should not remove elements from an empty queue", async () => {
-        await expect(mock.topValueUint()).to.be.revertedWith("PriorityQueue: empty queue");
-        await expect(mock.topUint()).to.be.revertedWith("PriorityQueue: empty queue");
-        await expect(mock.removeTopUint()).to.be.revertedWith("PriorityQueue: empty queue");
+        await expect(mock.topValueUint()).to.be.revertedWithCustomError(mock, "QueueIsEmpty").withArgs();
+        await expect(mock.topUint()).to.be.revertedWithCustomError(mock, "QueueIsEmpty").withArgs();
+        await expect(mock.removeTopUint()).to.be.revertedWithCustomError(mock, "QueueIsEmpty").withArgs();
       });
     });
 

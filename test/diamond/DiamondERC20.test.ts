@@ -1,9 +1,11 @@
 import { ethers } from "hardhat";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
+
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+
 import { Reverter } from "@/test/helpers/reverter";
 import { getSelectors, FacetAction } from "@/test/helpers/diamond-helper";
-import { ZERO_ADDR, MAX_UINT256 } from "@/scripts/utils/constants";
+import { MAX_UINT256 } from "@/scripts/utils/constants";
 import { wei } from "@/scripts/utils/utils";
 
 import { OwnableDiamondMock, DiamondERC20Mock, Diamond } from "@ethers-v6";
@@ -48,15 +50,15 @@ describe("DiamondERC20 and InitializableStorage", () => {
 
   describe("access", () => {
     it("should initialize only once", async () => {
-      await expect(erc20.__DiamondERC20Mock_init("Mock Token", "MT")).to.be.revertedWith(
-        "Initializable: contract is already initialized",
-      );
+      await expect(erc20.__DiamondERC20Mock_init("Mock Token", "MT"))
+        .to.be.revertedWithCustomError(erc20, "AlreadyInitialized")
+        .withArgs();
     });
 
     it("should initialize only by top level contract", async () => {
-      await expect(erc20.__DiamondERC20Direct_init("Mock Token", "MT")).to.be.revertedWith(
-        "Initializable: contract is not initializing",
-      );
+      await expect(erc20.__DiamondERC20Direct_init("Mock Token", "MT"))
+        .to.be.revertedWithCustomError(erc20, "NotInitializing")
+        .withArgs();
     });
 
     it("should disable implementation initialization", async () => {
@@ -69,7 +71,9 @@ describe("DiamondERC20 and InitializableStorage", () => {
         .to.emit(contract, "Initialized")
         .withArgs(await erc20.DIAMOND_ERC20_STORAGE_SLOT());
 
-      await expect(contract.disableInitializers()).to.be.revertedWith("Initializable: contract is initializing");
+      await expect(contract.disableInitializers())
+        .to.be.revertedWithCustomError(erc20, "InvalidInitialization")
+        .withArgs();
     });
   });
 
@@ -83,18 +87,19 @@ describe("DiamondERC20 and InitializableStorage", () => {
     });
 
     it("should not transfer tokens to/from zero address", async () => {
-      await expect(erc20.transferMock(SECOND.address, ZERO_ADDR, wei("100"))).to.be.revertedWith(
-        "ERC20: transfer to the zero address",
-      );
-      await expect(erc20.transferMock(ZERO_ADDR, SECOND.address, wei("100"))).to.be.revertedWith(
-        "ERC20: transfer from the zero address",
-      );
+      await expect(erc20.transferMock(SECOND.address, ethers.ZeroAddress, wei("100")))
+        .to.be.revertedWithCustomError(erc20, "ReceiverIsZeroAddress")
+        .withArgs();
+
+      await expect(erc20.transferMock(ethers.ZeroAddress, SECOND.address, wei("100")))
+        .to.be.revertedWithCustomError(erc20, "SenderIsZeroAddress")
+        .withArgs();
     });
 
     it("should not transfer tokens if balance is insufficient", async () => {
-      await expect(erc20.transfer(SECOND.address, wei("100"))).to.be.revertedWith(
-        "ERC20: transfer amount exceeds balance",
-      );
+      await expect(erc20.transfer(SECOND.address, wei("100")))
+        .to.be.revertedWithCustomError(erc20, "InsufficientBalance")
+        .withArgs(OWNER.address, erc20.balanceOf(OWNER.address), wei("100"));
     });
 
     it("should mint tokens", async () => {
@@ -104,7 +109,9 @@ describe("DiamondERC20 and InitializableStorage", () => {
     });
 
     it("should not mint tokens to zero address", async () => {
-      await expect(erc20.mint(ZERO_ADDR, wei("100"))).to.be.revertedWith("ERC20: mint to the zero address");
+      await expect(erc20.mint(ethers.ZeroAddress, wei("100")))
+        .to.be.revertedWithCustomError(erc20, "ReceiverIsZeroAddress")
+        .withArgs();
     });
 
     it("should burn tokens", async () => {
@@ -115,11 +122,15 @@ describe("DiamondERC20 and InitializableStorage", () => {
     });
 
     it("should not burn tokens from zero address", async () => {
-      await expect(erc20.burn(ZERO_ADDR, wei("100"))).to.be.revertedWith("ERC20: burn from the zero address");
+      await expect(erc20.burn(ethers.ZeroAddress, wei("100")))
+        .to.be.revertedWithCustomError(erc20, "SenderIsZeroAddress")
+        .withArgs();
     });
 
     it("should not burn tokens if balance is insufficient", async () => {
-      await expect(erc20.burn(OWNER.address, wei("100"))).to.be.revertedWith("ERC20: burn amount exceeds balance");
+      await expect(erc20.burn(OWNER.address, wei("100")))
+        .to.be.revertedWithCustomError(erc20, "InsufficientBalance")
+        .withArgs(OWNER.address, erc20.balanceOf(OWNER.address), wei("100"));
     });
 
     it("should approve tokens", async () => {
@@ -129,12 +140,13 @@ describe("DiamondERC20 and InitializableStorage", () => {
     });
 
     it("should not approve tokens to/from zero address", async () => {
-      await expect(erc20.approveMock(OWNER.address, ZERO_ADDR, wei("100"))).to.be.revertedWith(
-        "ERC20: approve to the zero address",
-      );
-      await expect(erc20.approveMock(ZERO_ADDR, OWNER.address, wei("100"))).to.be.revertedWith(
-        "ERC20: approve from the zero address",
-      );
+      await expect(erc20.approveMock(OWNER.address, ethers.ZeroAddress, wei("100")))
+        .to.be.revertedWithCustomError(erc20, "SpenderIsZeroAddress")
+        .withArgs();
+
+      await expect(erc20.approveMock(ethers.ZeroAddress, OWNER.address, wei("100")))
+        .to.be.revertedWithCustomError(erc20, "ApproverIsZeroAddress")
+        .withArgs();
     });
 
     it("should transfer tokens from address", async () => {
@@ -150,9 +162,9 @@ describe("DiamondERC20 and InitializableStorage", () => {
       await erc20.mint(OWNER.address, wei("100"));
       await erc20.approve(SECOND.address, wei("100"));
 
-      await expect(erc20.connect(SECOND).transferFrom(OWNER.address, SECOND.address, wei("110"))).to.be.revertedWith(
-        "ERC20: insufficient allowance",
-      );
+      await expect(erc20.connect(SECOND).transferFrom(OWNER.address, SECOND.address, wei("110")))
+        .to.be.revertedWithCustomError(erc20, "InsufficientAllowance")
+        .withArgs(SECOND.address, await erc20.allowance(OWNER.address, SECOND.address), wei("110"));
     });
 
     it("should not spend allowance if allowance is infinite type(uint256).max", async () => {

@@ -1,6 +1,7 @@
 import { ethers } from "hardhat";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+
 import { Reverter } from "@/test/helpers/reverter";
 
 import { RBACMock } from "@ethers-v6";
@@ -28,7 +29,7 @@ describe("RBAC", () => {
 
   describe("access", () => {
     it("should not initialize twice", async () => {
-      await expect(rbac.mockInit()).to.be.revertedWith("Initializable: contract is not initializing");
+      await expect(rbac.mockInit()).to.be.revertedWithCustomError(rbac, "NotInitializing").withArgs();
     });
   });
 
@@ -125,11 +126,11 @@ describe("RBAC", () => {
   describe("user roles", () => {
     describe("empty roles", () => {
       it("should not grant empty roles", async () => {
-        await expect(rbac.grantRoles(SECOND.address, [])).to.be.revertedWith("RBAC: empty roles");
+        await expect(rbac.grantRoles(SECOND.address, [])).to.be.revertedWithCustomError(rbac, "EmptyRoles");
       });
 
       it("should not revoke empty roles", async () => {
-        await expect(rbac.revokeRoles(SECOND.address, [])).to.be.revertedWith("RBAC: empty roles");
+        await expect(rbac.revokeRoles(SECOND.address, [])).to.be.revertedWithCustomError(rbac, "EmptyRoles");
       });
     });
 
@@ -340,22 +341,29 @@ describe("RBAC", () => {
 
   describe("access", () => {
     it("should not call these functions without permission", async () => {
-      await expect(rbac.connect(SECOND).grantRoles(OWNER.address, ["ROLE"])).to.be.revertedWith(
-        "RBAC: no CREATE permission for resource RBAC_RESOURCE",
-      );
-      await expect(rbac.connect(SECOND).revokeRoles(OWNER.address, ["MASTER"])).to.be.revertedWith(
-        "RBAC: no DELETE permission for resource RBAC_RESOURCE",
-      );
+      await expect(rbac.connect(SECOND).grantRoles(OWNER.address, ["ROLE"]))
+        .to.be.revertedWithCustomError(rbac, "NoPermissionForResource")
+        .withArgs(SECOND.address, "CREATE", "RBAC_RESOURCE");
+
+      await expect(rbac.connect(SECOND).revokeRoles(OWNER.address, ["MASTER"]))
+        .to.be.revertedWithCustomError(rbac, "NoPermissionForResource")
+        .withArgs(SECOND.address, "DELETE", "RBAC_RESOURCE");
+
       await expect(
         rbac
           .connect(SECOND)
           .addPermissionsToRole("ROLE", [{ resource: "resource", permissions: ["permission"] }], true),
-      ).to.be.revertedWith("RBAC: no CREATE permission for resource RBAC_RESOURCE");
+      )
+        .to.be.revertedWithCustomError(rbac, "NoPermissionForResource")
+        .withArgs(SECOND.address, "CREATE", "RBAC_RESOURCE");
+
       await expect(
         rbac
           .connect(SECOND)
           .removePermissionsFromRole("ROLE", [{ resource: "resource", permissions: ["permission"] }], false),
-      ).to.be.revertedWith("RBAC: no DELETE permission for resource RBAC_RESOURCE");
+      )
+        .to.be.revertedWithCustomError(rbac, "NoPermissionForResource")
+        .withArgs(SECOND.address, "DELETE", "RBAC_RESOURCE");
     });
   });
 });

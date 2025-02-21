@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+// solhint-disable
+pragma solidity ^0.8.21;
 
-import {DiamondAccessControl} from "../../../diamond/access/access-control/DiamondAccessControl.sol";
+import {ADiamondAccessControl} from "../../../diamond/access/access-control/ADiamondAccessControl.sol";
 
-contract DiamondAccessControlMock is DiamondAccessControl {
+contract DiamondAccessControlMock is ADiamondAccessControl {
     bytes32 public constant AGENT_ROLE = bytes32(uint256(0x01));
 
     function __DiamondAccessControlDirect_init() external {
-        __DiamondAccessControl_init();
+        __ADiamondAccessControl_init();
     }
 
     function __DiamondAccessControlMock_init()
         external
         initializer(DIAMOND_ACCESS_CONTROL_STORAGE_SLOT)
     {
-        __DiamondAccessControl_init();
+        __ADiamondAccessControl_init();
     }
 
     function setRoleAdmin(

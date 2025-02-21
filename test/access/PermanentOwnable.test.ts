@@ -1,8 +1,9 @@
 import { ethers } from "hardhat";
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
+
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+
 import { Reverter } from "@/test/helpers/reverter";
-import { ZERO_ADDR } from "@/scripts/utils/constants";
 
 import { PermanentOwnableMock } from "@ethers-v6";
 
@@ -33,16 +34,16 @@ describe("PermanentOwnable", () => {
     it("should reject zero address during the owner initialization", async () => {
       const permanentOwnableMock = await ethers.getContractFactory("PermanentOwnableMock");
 
-      await expect(permanentOwnableMock.deploy(ZERO_ADDR)).to.be.revertedWith(
-        "PermanentOwnable: zero address can not be the owner",
-      );
+      await expect(permanentOwnableMock.deploy(ethers.ZeroAddress))
+        .to.be.revertedWithCustomError(permanentOwnable, "InvalidOwner")
+        .withArgs();
     });
 
     it("only owner should call this function", async () => {
       expect(await permanentOwnable.connect(OWNER).onlyOwnerMethod()).to.emit(permanentOwnable, "ValidOwner");
-      await expect(permanentOwnable.connect(OTHER).onlyOwnerMethod()).to.be.revertedWith(
-        "PermanentOwnable: caller is not the owner",
-      );
+      await expect(permanentOwnable.connect(OTHER).onlyOwnerMethod())
+        .to.be.revertedWithCustomError(permanentOwnable, "UnauthorizedAccount")
+        .withArgs(OTHER);
     });
   });
 });

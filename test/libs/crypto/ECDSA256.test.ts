@@ -50,14 +50,16 @@ describe("ECDSA256", () => {
       it("should revert if signature or public key has an invalid length", async () => {
         const wrongSig = "0x0101";
 
-        await expect(ecdsa256.verifySECP256r1(message, wrongSig, pubKey)).to.be.revertedWith(
-          "ECDSA256: length is not 64",
+        await expect(ecdsa256.verifySECP256r1(message, wrongSig, pubKey)).to.be.revertedWithCustomError(
+          ecdsa256,
+          "LengthIsNot64",
         );
 
         const wrongPubKey = "0x0101";
 
-        await expect(ecdsa256.verifySECP256r1(message, signature, wrongPubKey)).to.be.revertedWith(
-          "ECDSA256: length is not 64",
+        await expect(ecdsa256.verifySECP256r1(message, signature, wrongPubKey)).to.be.revertedWithCustomError(
+          ecdsa256,
+          "LengthIsNot64",
         );
       });
     });

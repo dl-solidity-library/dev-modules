@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+// solhint-disable
+pragma solidity ^0.8.21;
 
 contract BaseVerifierMock {
     bool public verifyResult;
     uint256[] public expectedInputs;
+
+    error InvalidInputs();
 
     constructor(bool verifyResult_, uint256[] memory expectedInputs_) {
         verifyResult = verifyResult_;
@@ -32,7 +35,7 @@ contract Verifier2Mock is BaseVerifierMock {
         uint256[2] memory inputs_
     ) external view returns (bool) {
         for (uint256 i = 0; i < inputs_.length; i++) {
-            require(inputs_[i] == expectedInputs[i], "Verifier2Mock: invalid inputs");
+            if (inputs_[i] != expectedInputs[i]) revert InvalidInputs();
         }
 
         return verifyResult;
@@ -52,7 +55,7 @@ contract Verifier3Mock is BaseVerifierMock {
         uint256[3] memory inputs_
     ) external view returns (bool) {
         for (uint256 i = 0; i < inputs_.length; i++) {
-            require(inputs_[i] == expectedInputs[i], "Verifier3Mock: invalid inputs");
+            if (inputs_[i] != expectedInputs[i]) revert InvalidInputs();
         }
 
         return verifyResult;

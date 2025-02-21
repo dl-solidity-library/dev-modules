@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.21;
 
 type uint512 is uint256;
 type call512 is uint256;
@@ -1540,7 +1540,7 @@ library U512 {
      */
     function _modsub(call512 call_, uint512 a_, uint512 b_, uint512 m_, uint512 r_) private view {
         unchecked {
-            int cmp_ = cmp(a_, b_);
+            int256 cmp_ = cmp(a_, b_);
 
             if (cmp_ >= 0) {
                 _sub(a_, b_, r_);

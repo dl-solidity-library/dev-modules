@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+// solhint-disable
+pragma solidity ^0.8.21;
 
-import {AbstractDependant} from "../../../contracts-registry/AbstractDependant.sol";
+import {ADependant} from "../../../contracts-registry/ADependant.sol";
 
 import {ContractsRegistryPoolMock} from "./ContractsRegistryPoolMock.sol";
 
-contract PoolMock is AbstractDependant {
+contract PoolMock is ADependant {
     address public token;
 
     function setDependencies(address contractsRegistry_, bytes memory) public override dependant {
