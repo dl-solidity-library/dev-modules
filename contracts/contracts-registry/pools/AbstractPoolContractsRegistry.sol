@@ -53,7 +53,7 @@ abstract contract AbstractPoolContractsRegistry is Initializable, AbstractDepend
     /**
      * @notice The function to add new pools into the registry. Gets called from PoolFactory
      *
-     * Proper only factory access control must be added in descending contracts + `_addProxyPool()` should be called inside.
+     * Proper only factory access control must be added in descendant contracts + `_addProxyPool()` should be called inside.
      *
      * @param name_ the pool's associated name
      * @param poolAddress_ the proxy address of the pool
@@ -91,7 +91,7 @@ abstract contract AbstractPoolContractsRegistry is Initializable, AbstractDepend
      * @notice The function to check if the address is a pool
      * @param name_ the associated pools name
      * @param pool_ the address to check
-     * @return true if pool_ is whithing the registry
+     * @return true if pool_ is within the registry
      */
     function isPool(string memory name_, address pool_) public view returns (bool) {
         return _pools[name_].contains(pool_);
