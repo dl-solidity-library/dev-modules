@@ -110,21 +110,21 @@ library ArrayHelper {
 
     /**
      * @notice The function to compute the prefix sum array
-     * @param arr_ the initial array to be turned into the prefix sum array
+     * @param array_ the initial array to be turned into the prefix sum array
      * @return prefixes_ the prefix sum array
      */
     function countPrefixes(
-        uint256[] memory arr_
+        uint256[] memory array_
     ) internal pure returns (uint256[] memory prefixes_) {
-        if (arr_.length == 0) {
+        if (array_.length == 0) {
             return prefixes_;
         }
 
-        prefixes_ = new uint256[](arr_.length);
-        prefixes_[0] = arr_[0];
+        prefixes_ = new uint256[](array_.length);
+        prefixes_[0] = array_[0];
 
         for (uint256 i = 1; i < prefixes_.length; i++) {
-            prefixes_[i] = prefixes_[i - 1] + arr_[i];
+            prefixes_[i] = prefixes_[i - 1] + array_[i];
         }
     }
 
